@@ -97,6 +97,16 @@ public class GuiColossalChest extends ScrollingGuiContainer {
     }
 
     @Override
+    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        // Draw background texture
+        this.drawDefaultBackground();
+        int i = (this.width - this.xSize) / 2;
+        int j = (this.height - this.ySize) / 2;
+        this.mc.getTextureManager().bindTexture(getGuiTexture());
+        this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
+    }
+
+    @Override
     protected void handleMouseClick(Slot slotIn, int slotId, int clickedButton, ClickType clickType) {
         if (slotIn != null) {
             slotId = slotIn.slotNumber;
