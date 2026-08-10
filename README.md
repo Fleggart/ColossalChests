@@ -1,6 +1,5 @@
 ## Colossal Chests
 
-[![Build Status](https://travis-ci.org/CyclopsMC/ColossalChests.svg?branch=master-1.11)](https://travis-ci.org/rubensworks/ColossalChests)
 [![CurseForge](http://cf.way2muchnoise.eu/full_237875_downloads.svg)](https://minecraft.curseforge.com/projects/colossal-chests)
 
 For when regular chests are too small
