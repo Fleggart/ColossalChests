@@ -11,10 +11,6 @@ import net.minecraftforge.items.ItemStackHandler;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 
-/**
- * 兼容旧版 CyclopsCore SimpleInventory 的替代类
- * 内部使用 ItemStackHandler 存储
- */
 public class LegacySimpleInventory implements IInventory {
 
     private ItemStackHandler handler;
@@ -78,7 +74,6 @@ public class LegacySimpleInventory implements IInventory {
         handler.setStackInSlot(index, stack);
     }
 
-    // ===== 旧版 CyclopsCore 兼容方法 =====
     public void setStackInSlot(int index, ItemStack stack) {
         handler.setStackInSlot(index, stack);
     }
@@ -105,9 +100,7 @@ public class LegacySimpleInventory implements IInventory {
     }
 
     @Override
-    public void markDirty() {
-        // 不需要操作
-    }
+    public void markDirty() {}
 
     @Override
     public boolean isUsableByPlayer(EntityPlayer player) {
@@ -115,14 +108,10 @@ public class LegacySimpleInventory implements IInventory {
     }
 
     @Override
-    public void openInventory(EntityPlayer player) {
-        // 不需要操作
-    }
+    public void openInventory(EntityPlayer player) {}
 
     @Override
-    public void closeInventory(EntityPlayer player) {
-        // 不需要操作
-    }
+    public void closeInventory(EntityPlayer player) {}
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
@@ -135,9 +124,7 @@ public class LegacySimpleInventory implements IInventory {
     }
 
     @Override
-    public void setField(int id, int value) {
-        // 不需要操作
-    }
+    public void setField(int id, int value) {}
 
     @Override
     public int getFieldCount() {
@@ -161,7 +148,6 @@ public class LegacySimpleInventory implements IInventory {
         return false;
     }
 
-    // ===== NBT 序列化 =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
     }
@@ -170,13 +156,11 @@ public class LegacySimpleInventory implements IInventory {
         handler.deserializeNBT(nbt);
     }
 
-    // ===== 旧版兼容方法 =====
     public int getSize() {
         return handler.getSlots();
     }
 
     public void setSize(int size) {
-        // 重新创建 handler
         ItemStackHandler newHandler = new ItemStackHandler(size);
         int copySize = Math.min(size, handler.getSlots());
         for (int i = 0; i < copySize; i++) {
