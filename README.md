@@ -1,9 +1,5 @@
 ## Colossal Chests
 
-[![CurseForge](http://cf.way2muchnoise.eu/full_237875_downloads.svg)](https://minecraft.curseforge.com/projects/colossal-chests)
-
-For when regular chests are too small
-
 All stable releases (including deobfuscated builds) can be found on [CurseForge](http://minecraft.curseforge.com/mc-mods/colossal-chests/files).
 
 [Development builds](https://oss.jfrog.org/artifactory/simple/libs-release/org/cyclops/colossalchests/ColossalChests/) are hosted by [JFrog Artifactory](https://www.jfrog.com/artifactory/).
