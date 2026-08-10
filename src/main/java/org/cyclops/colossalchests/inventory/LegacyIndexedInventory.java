@@ -1,8 +1,7 @@
 package org.cyclops.colossalchests.inventory;
 
-/**
- * 兼容旧版 CyclopsCore IndexedInventory 的替代类
- */
+import net.minecraft.item.ItemStack;
+
 public class LegacyIndexedInventory extends LegacySimpleInventory {
 
     public LegacyIndexedInventory() {
@@ -13,9 +12,7 @@ public class LegacyIndexedInventory extends LegacySimpleInventory {
         super(size, name, stackLimit);
     }
 
-    // IndexedInventory 特有的方法
     public int getInventoryHash() {
-        // 计算 inventory 的 hash
         int hash = 0;
         for (int i = 0; i < getSlots(); i++) {
             ItemStack stack = getStackInSlot(i);
