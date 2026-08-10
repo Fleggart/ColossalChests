@@ -1,0 +1,11 @@
+// settings.gradle
+pluginManagement {
+    repositories {
+        maven {
+            name 'GTNH Maven'
+            url 'https://nexus.gtnewhorizons.com/repository/public/'
+        }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
