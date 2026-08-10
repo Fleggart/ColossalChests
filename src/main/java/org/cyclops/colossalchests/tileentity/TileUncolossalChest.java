@@ -23,7 +23,7 @@ import org.cyclops.cyclopscore.helper.WorldHelpers;
 import org.cyclops.cyclopscore.persist.nbt.NBTPersist;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 import org.cyclops.cyclopscore.tileentity.InventoryTileEntity;
-
+import net.minecraft.item.ItemStack;
 import java.util.List;
 
 /**
