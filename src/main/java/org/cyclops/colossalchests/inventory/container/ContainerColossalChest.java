@@ -114,7 +114,7 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
     @Override
     protected int getSizeInventory() {
-        return tile.getContainerSize();
+        return tile.getSizeInventory();
     }
 
     @Override
