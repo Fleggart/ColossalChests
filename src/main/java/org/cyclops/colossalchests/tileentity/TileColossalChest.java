@@ -126,8 +126,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         // Temporarily disabled due to API changes in IndexedSlotlessItemHandlerWrapper
         // This only affects compatibility with CommonCapabilities mod
         // The chest inventory works perfectly without this capability
-        // IItemHandler itemHandler = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-        // addCapabilityInternal(Capabilities.SLOTLESS_ITEMHANDLER, ...);
     }
 
     public Vec3i getSize() {
@@ -348,7 +346,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     @Override
     public void openInventory(EntityPlayer entityPlayer) {
         if (!entityPlayer.isSpectator()) {
-            this.openInventory(entityPlayer);
+            super.openInventory(entityPlayer);
             triggerPlayerUsageChange(1);
         }
     }
@@ -356,7 +354,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     @Override
     public void closeInventory(EntityPlayer entityPlayer) {
         if (!entityPlayer.isSpectator()) {
-            this.closeInventory(entityPlayer);
+            super.closeInventory(entityPlayer);
             triggerPlayerUsageChange(-1);
         }
     }
@@ -394,6 +392,11 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
                 inventory.setInventorySlotContents(i, ItemStack.EMPTY);
             }
         }
+    }
+
+    @Override
+    public int getFieldCount() {
+        return 0;
     }
 
     @Override
