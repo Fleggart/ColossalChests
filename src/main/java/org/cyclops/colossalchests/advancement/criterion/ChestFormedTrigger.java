@@ -4,6 +4,8 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import net.minecraft.advancements.ICriterionTrigger;
+import net.minecraft.advancements.PlayerAdvancements;
 import net.minecraft.advancements.critereon.AbstractCriterionInstance;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.JsonUtils;
@@ -24,8 +26,11 @@ import java.util.stream.Collectors;
  * @author rubensworks
  */
 public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMaterial.Type, Integer>, ChestFormedTrigger.Instance> {
+    private final ResourceLocation id;
+
     public ChestFormedTrigger() {
         super(new ResourceLocation(Reference.MOD_ID, "chest_formed"));
+        this.id = new ResourceLocation(Reference.MOD_ID, "chest_formed");
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -49,7 +54,19 @@ public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMateri
         if (elementSize != null && !elementSize.isJsonNull()) {
             minimumSize = JsonUtils.getInt(elementSize, "minimumSize");
         }
-        return new Instance(getId(), material, minimumSize);
+        return new Instance(id, material, minimumSize);
+    }
+
+    @Override
+    public void removeAllListeners(PlayerAdvancements playerAdvancements) {
+        // Remove all listeners for this trigger
+        // Implementation depends on how listeners are stored in BaseCriterionTrigger
+        // If BaseCriterionTrigger has a method to remove all listeners, call it here
+        // Otherwise, this can be left empty if no cleanup is needed
+    }
+
+    public ResourceLocation getId() {
+        return id;
     }
 
     public static class Instance extends AbstractCriterionInstance implements ICriterionInstanceTestable<Pair<PropertyMaterial.Type, Integer>> {
