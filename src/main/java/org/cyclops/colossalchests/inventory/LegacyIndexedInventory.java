@@ -1,4 +1,4 @@
-package org.cyclops.cyclopscore.inventory;
+package org.cyclops.colossalchests.inventory;
 
 /**
  * 兼容旧版 CyclopsCore IndexedInventory 的替代类
