@@ -15,7 +15,6 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import org.apache.commons.lang3.ArrayUtils;
-import org.cyclops.colossalchests.ColossalChests;
 import org.cyclops.colossalchests.block.UncolossalChest;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.cyclopscore.helper.BlockHelpers;
@@ -165,9 +164,14 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
         ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, getSizeInventory()), DiscreteDomain.integers()
+                Range.closed(0, getSlots()), DiscreteDomain.integers()
         );
         return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
+    }
+
+    @Override
+    public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
+        return true;
     }
 
     @Override
