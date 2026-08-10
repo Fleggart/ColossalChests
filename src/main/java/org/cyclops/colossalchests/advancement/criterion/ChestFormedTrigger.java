@@ -58,10 +58,18 @@ public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMateri
     }
 
     @Override
+    public void removeListener(PlayerAdvancements playerAdvancements, ICriterionTrigger.Listener<Instance> listener) {
+        // Remove the specified listener
+        // Implementation depends on how BaseCriterionTrigger stores listeners
+        // If the parent class has a method to remove listeners, call it here
+        // Otherwise, this can be left empty if no cleanup is needed
+    }
+
+    @Override
     public void removeAllListeners(PlayerAdvancements playerAdvancements) {
         // Remove all listeners for this trigger
-        // Implementation depends on how listeners are stored in BaseCriterionTrigger
-        // If BaseCriterionTrigger has a method to remove all listeners, call it here
+        // Implementation depends on how BaseCriterionTrigger stores listeners
+        // If the parent class has a method to remove all listeners, call it here
         // Otherwise, this can be left empty if no cleanup is needed
     }
 
