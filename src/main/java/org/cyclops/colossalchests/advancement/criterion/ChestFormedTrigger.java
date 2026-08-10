@@ -21,10 +21,6 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-/**
- * Triggers when a colossal chest is formed.
- * @author rubensworks
- */
 public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMaterial.Type, Integer>, ChestFormedTrigger.Instance> {
     private final ResourceLocation id;
 
@@ -58,19 +54,18 @@ public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMateri
     }
 
     @Override
+    public void addListener(PlayerAdvancements playerAdvancements, ICriterionTrigger.Listener<Instance> listener) {
+        // Add listener - implementation depends on parent class
+    }
+
+    @Override
     public void removeListener(PlayerAdvancements playerAdvancements, ICriterionTrigger.Listener<Instance> listener) {
-        // Remove the specified listener
-        // Implementation depends on how BaseCriterionTrigger stores listeners
-        // If the parent class has a method to remove listeners, call it here
-        // Otherwise, this can be left empty if no cleanup is needed
+        // Remove listener - implementation depends on parent class
     }
 
     @Override
     public void removeAllListeners(PlayerAdvancements playerAdvancements) {
-        // Remove all listeners for this trigger
-        // Implementation depends on how BaseCriterionTrigger stores listeners
-        // If the parent class has a method to remove all listeners, call it here
-        // Otherwise, this can be left empty if no cleanup is needed
+        // Remove all listeners - implementation depends on parent class
     }
 
     public ResourceLocation getId() {
@@ -92,5 +87,4 @@ public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMateri
                     && (this.minimumSize == null || this.minimumSize <= data.getRight());
         }
     }
-
 }
