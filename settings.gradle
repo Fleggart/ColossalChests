@@ -1,10 +1,12 @@
 // settings.gradle
 pluginManagement {
     repositories {
+        // 关键：添加 GTNH 的 Maven 仓库
         maven {
             name 'GTNH Maven'
             url 'https://nexus.gtnewhorizons.com/repository/public/'
         }
+        // 保留 Gradle 官方插件仓库
         gradlePluginPortal()
         mavenCentral()
     }
