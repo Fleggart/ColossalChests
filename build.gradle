@@ -23,6 +23,7 @@ repositories {
 
 dependencies {
     implementation "curse.maven:Cyclops-Core-232758:3159497"
+    implementation "curse.maven:Common-Capabilities-247007:3053017"
 }
 
 version = "1.0.0"
