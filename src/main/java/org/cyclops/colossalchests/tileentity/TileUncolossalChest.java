@@ -152,7 +152,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
         ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, getSizeInventory()), DiscreteDomain.integers()
+                Range.closed(0, super.getSizeInventory()), DiscreteDomain.integers()
         );
         return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
     }
@@ -174,9 +174,14 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
 
     @Override
     public void clear() {
-        for (int i = 0; i < getSizeInventory(); i++) {
-            setInventorySlotContents(i, ItemStack.EMPTY);
+        for (int i = 0; i < super.getSizeInventory(); i++) {
+            super.setInventorySlotContents(i, ItemStack.EMPTY);
         }
+    }
+
+    @Override
+    public int getFieldCount() {
+        return 0;
     }
 
     @Override
