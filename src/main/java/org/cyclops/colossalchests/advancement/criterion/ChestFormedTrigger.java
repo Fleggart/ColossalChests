@@ -55,17 +55,17 @@ public class ChestFormedTrigger extends BaseCriterionTrigger<Pair<PropertyMateri
 
     @Override
     public void addListener(PlayerAdvancements playerAdvancements, ICriterionTrigger.Listener<Instance> listener) {
-        // Add listener - implementation depends on parent class
+        // Implementation depends on parent class
     }
 
     @Override
     public void removeListener(PlayerAdvancements playerAdvancements, ICriterionTrigger.Listener<Instance> listener) {
-        // Remove listener - implementation depends on parent class
+        // Implementation depends on parent class
     }
 
     @Override
     public void removeAllListeners(PlayerAdvancements playerAdvancements) {
-        // Remove all listeners - implementation depends on parent class
+        // Implementation depends on parent class
     }
 
     public ResourceLocation getId() {
