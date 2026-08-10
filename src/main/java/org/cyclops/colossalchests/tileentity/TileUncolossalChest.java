@@ -17,7 +17,6 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import org.apache.commons.lang3.ArrayUtils;
 import org.cyclops.colossalchests.block.UncolossalChest;
-import org.cyclops.colossalchests.inventory.LegacySimpleInventory;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.cyclopscore.helper.BlockHelpers;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
@@ -28,11 +27,6 @@ import org.cyclops.cyclopscore.tileentity.InventoryTileEntity;
 
 import java.util.List;
 
-/**
- * A machine that can infuse things with blood.
- * @author rubensworks
- *
- */
 public class TileUncolossalChest extends InventoryTileEntity implements CyclopsTileEntity.ITickingTile {
 
     private static final int TICK_MODULUS = 200;
@@ -43,13 +37,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @NBTPersist
     private String customName = null;
 
-    /**
-     * The previous angle of the lid.
-     */
     public float prevLidAngle;
-    /**
-     * The current angle of the lid.
-     */
     public float lidAngle;
     private int playersUsing;
 
@@ -63,8 +51,6 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     public void updateTileEntity() {
         super.updateTileEntity();
 
-        // Resynchronize clients with the server state, the last condition makes sure
-        // not all chests are synced at the same time.
         if(world != null
                 && !this.world.isRemote
                 && this.playersUsing != 0
