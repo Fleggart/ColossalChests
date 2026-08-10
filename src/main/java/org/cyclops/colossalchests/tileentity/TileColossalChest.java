@@ -99,7 +99,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
 
     @NBTPersist
     private LegacySimpleInventory lastValidInventory = null;
-    private LegacySimpleInventory inventory = null; // No need to @NBTPersists, this is done because of its getter
+    private LegacySimpleInventory inventory = null;
 
     @NBTPersist
     private Vec3i size = LocationHelpers.copyLocation(Vec3i.NULL_VECTOR);
@@ -110,18 +110,12 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     @NBTPersist
     private int materialId = 0;
     @NBTPersist
-    private int _modVersion = 0; // For backwards compatibility
+    private int _modVersion = 0;
     @NBTPersist(useDefaultValue = false)
     private List<Vec3i> interfaceLocations = Lists.newArrayList();
     private static final int _MOD_VERSION = 1;
 
-    /**
-     * The previous angle of the lid.
-     */
     public float prevLidAngle;
-    /**
-     * The current angle of the lid.
-     */
     public float lidAngle;
     private int playersUsing;
     private boolean recreateNullInventory = true;
@@ -161,18 +155,10 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
                 }));
     }
 
-    /**
-     * @return the size
-     */
     public Vec3i getSize() {
         return size;
     }
 
-    /**
-     * Set the size.
-     * This will also handle the change in inventory size.
-     * @param size the size to set
-     */
     public void setSize(Vec3i size) {
         this.size = size;
         facingSlots.clear();
@@ -180,9 +166,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
             this._modVersion = _MOD_VERSION;
             this.inventory = constructInventory();
 
-            // Move all items from the last valid inventory into the new one
-            // If the new inventory would be smaller than the old one, the remaining
-            // items will be ejected into the world for slot index larger than the new size.
             if(this.lastValidInventory != null) {
                 int slot = 0;
                 while(slot < Math.min(this.lastValidInventory.getSizeInventory(), this.inventory.getSizeInventory())) {
@@ -249,8 +232,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
 
     @Override
     public NBTTagCompound getUpdateTag() {
-        // Don't send the inventory to the client.
-        // The client will receive the data once the gui is opened.
         LegacySimpleInventory oldInventory = this.inventory;
         LegacySimpleInventory oldLastInventory = this.lastValidInventory;
         this.inventory = null;
@@ -269,8 +250,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         LegacySimpleInventory oldLastInventory = this.lastValidInventory;
 
         if (getWorld() != null && getWorld().isRemote) {
-            // Don't read the inventory on the client.
-            // The client will receive the data once the gui is opened.
             this.inventory = null;
             this.lastValidInventory = null;
             this.recreateNullInventory = false;
@@ -300,11 +279,9 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     public void updateTileEntity() {
         super.updateTileEntity();
 
-        // Backwards-compatibility check
         if(world != null) {
             if(this._modVersion != _MOD_VERSION && this.isStructureComplete()) {
                 ColossalChests.clog("Upgrading colossal chest from old mod version at " + getPos());
-                // In the old version, we only had wooden versions, so correctly set their properties.
                 TileColossalChest.detector.detect(getWorld(), getPos(), null, new CubeDetector.IValidationAction() {
                     @Override
                     public L10NHelpers.UnlocalizedString onValidate(BlockPos location, IBlockState blockState) {
@@ -318,8 +295,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
             }
         }
 
-        // Resynchronize clients with the server state, the last condition makes sure
-        // not all chests are synced at the same time.
         if(world != null
                 && !this.world.isRemote
                 && this.playersUsing != 0
@@ -433,6 +408,11 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     }
 
     @Override
+    public int getSizeInventory() {
+        return getInventory().getSizeInventory();
+    }
+
+    @Override
     protected boolean canAccess(int slot, EnumFacing side) {
         return getSizeSingular() > 1 && super.canAccess(slot, side);
     }
@@ -467,16 +447,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return this.renderOffset;
     }
 
-    /**
-     * Callback for when a structure has been detected for a spirit furnace block.
-     * @param world The world.
-     * @param location The location of one block of the structure.
-     * @param size The size of the structure.
-     * @param valid If the structure is being validated(/created), otherwise invalidated.
-     * @param originCorner The origin corner
-     */
     public static void detectStructure(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
-
     }
 
     @Override
@@ -505,9 +476,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return true;
     }
 
-    /**
-     * @return If the structure is valid.
-     */
     public boolean isStructureComplete() {
         return !getSize().equals(Vec3i.NULL_VECTOR);
     }
@@ -540,7 +508,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return Collections.unmodifiableList(interfaceLocations);
     }
 
-    // Hack for blocking spectator-mode access
     @Override
     public ResourceLocation getLootTable() {
         return new ResourceLocation("dummy");
