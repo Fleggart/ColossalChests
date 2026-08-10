@@ -5,13 +5,13 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.items.ItemStackHandler;
+import org.cyclops.cyclopscore.inventory.INBTInventory;
 
-import javax.annotation.Nonnull;
-import java.util.Arrays;
-
-public class LegacySimpleInventory implements IInventory {
+public class LegacySimpleInventory implements IInventory, INBTInventory {
 
     private ItemStackHandler handler;
     private String name;
@@ -74,26 +74,6 @@ public class LegacySimpleInventory implements IInventory {
         handler.setStackInSlot(index, stack);
     }
 
-    public void setStackInSlot(int index, ItemStack stack) {
-        handler.setStackInSlot(index, stack);
-    }
-
-    public int getContainerSize() {
-        return handler.getSlots();
-    }
-
-    public int getSlots() {
-        return handler.getSlots();
-    }
-
-    public void setItem(int index, ItemStack stack) {
-        handler.setStackInSlot(index, stack);
-    }
-
-    public ItemStack getItem(int index) {
-        return handler.getStackInSlot(index);
-    }
-
     @Override
     public int getInventoryStackLimit() {
         return stackLimit;
@@ -148,6 +128,23 @@ public class LegacySimpleInventory implements IInventory {
         return false;
     }
 
+    @Override
+    public ITextComponent getDisplayName() {
+        return new TextComponentString(getName());
+    }
+
+    // ===== INBTInventory methods =====
+    @Override
+    public NBTTagCompound toNBT() {
+        return serializeNBT();
+    }
+
+    @Override
+    public void fromNBT(NBTTagCompound nbt) {
+        deserializeNBT(nbt);
+    }
+
+    // ===== Custom methods for compatibility =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
     }
@@ -156,16 +153,19 @@ public class LegacySimpleInventory implements IInventory {
         handler.deserializeNBT(nbt);
     }
 
-    public int getSize() {
+    public int getSlots() {
         return handler.getSlots();
     }
 
-    public void setSize(int size) {
-        ItemStackHandler newHandler = new ItemStackHandler(size);
-        int copySize = Math.min(size, handler.getSlots());
-        for (int i = 0; i < copySize; i++) {
-            newHandler.setStackInSlot(i, handler.getStackInSlot(i));
-        }
-        this.handler = newHandler;
+    public void setStackInSlot(int index, ItemStack stack) {
+        handler.setStackInSlot(index, stack);
+    }
+
+    public void setItem(int index, ItemStack stack) {
+        handler.setStackInSlot(index, stack);
+    }
+
+    public ItemStack getItem(int index) {
+        return handler.getStackInSlot(index);
     }
 }
