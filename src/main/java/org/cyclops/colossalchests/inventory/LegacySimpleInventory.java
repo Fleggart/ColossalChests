@@ -40,7 +40,6 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         return true;
     }
 
-    // MCP 映射的方法名，由 isEmpty() 映射而来
     public boolean func_191420_l() {
         return isEmpty();
     }
@@ -145,6 +144,11 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
     @Override
     public void fromNBT(NBTTagCompound nbt) {
         handler.deserializeNBT(nbt);
+    }
+
+    @Override
+    public void writeToNBT(NBTTagCompound nbt) {
+        nbt.setTag("inventory", handler.serializeNBT());
     }
 
     // ===== Convenience methods =====
