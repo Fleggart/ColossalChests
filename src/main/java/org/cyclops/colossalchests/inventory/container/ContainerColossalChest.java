@@ -70,8 +70,8 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
         this.tile = tile;
         tile.openInventory(inventory.player);
-        this.chestSlots = Lists.newArrayListWithCapacity(tile.getContainerSize());
-        this.addChestSlots(tile.getContainerSize() / CHEST_INVENTORY_COLUMNS, CHEST_INVENTORY_COLUMNS);
+        this.chestSlots = Lists.newArrayListWithCapacity(tile.getSizeInventory());
+        this.addChestSlots(tile.getSizeInventory() / CHEST_INVENTORY_COLUMNS, CHEST_INVENTORY_COLUMNS);
         this.addPlayerInventory(inventory, INVENTORY_OFFSET_X, INVENTORY_OFFSET_Y);
         updateFilter("");
 
