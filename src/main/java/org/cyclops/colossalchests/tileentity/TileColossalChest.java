@@ -185,15 +185,15 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
             // items will be ejected into the world for slot index larger than the new size.
             if(this.lastValidInventory != null) {
                 int slot = 0;
-                while(slot < Math.min(this.lastValidInventory.getSizeInventory(), this.inventory.getSizeInventory())) {
+                while(slot < Math.min(this.lastValidInventory.getSlots(), this.inventory.getSlots())) {
                     ItemStack contents = this.lastValidInventory.getStackInSlot(slot);
                     if (!contents.isEmpty()) {
-                        this.inventory.setInventorySlotContents(slot, contents);
-                        this.lastValidInventory.setInventorySlotContents(slot, ItemStack.EMPTY);
+                        this.inventory.setStackInSlot(slot, contents);
+                        this.lastValidInventory.setStackInSlot(slot, ItemStack.EMPTY);
                     }
                     slot++;
                 }
-                if(slot < this.lastValidInventory.getSizeInventory()) {
+                if(slot < this.lastValidInventory.getSlots()) {
                     MinecraftHelpers.dropItems(getWorld(), this.lastValidInventory, getPos());
                 }
                 this.lastValidInventory = null;
@@ -241,8 +241,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         LargeInventory inv = !isClientSide() ? new IndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
                 : new LargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
         Random random = new Random();
-        for (int i = 0; i < inv.getSizeInventory(); i++) {
-            inv.setInventorySlotContents(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
+        for (int i = 0; i < inv.getSlots(); i++) {
+            inv.setStackInSlot(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
         }
         return inv;
     }
@@ -420,7 +420,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
 
     @Override
     public INBTInventory getInventory() {
-        if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSizeInventory() != calculateInventorySize())) {
+        if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSlots() != calculateInventorySize())) {
             return inventory = constructInventory();
         }
         if(lastValidInventory != null) {
@@ -487,12 +487,17 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         int[] slots = facingSlots.get(side);
         if(slots == null) {
             ContiguousSet<Integer> integers = ContiguousSet.create(
-                    Range.closedOpen(0, getSizeInventory()), DiscreteDomain.integers()
+                    Range.closedOpen(0, getSlots()), DiscreteDomain.integers()
             );
             slots = ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
             facingSlots.put(side, slots);
         }
         return slots;
+    }
+
+    @Override
+    public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
+        return true;
     }
 
     /**
