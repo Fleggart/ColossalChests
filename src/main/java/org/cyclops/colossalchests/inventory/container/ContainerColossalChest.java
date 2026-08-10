@@ -28,11 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * Container for the {@link org.cyclops.colossalchests.block.ColossalChest}.
- * @author rubensworks
- *
- */
 @ChestContainer(isLargeChest = true)
 public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
@@ -41,13 +36,7 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
     private static final int CHEST_INVENTORY_OFFSET_X = 9;
     private static final int CHEST_INVENTORY_OFFSET_Y = 18;
-    /**
-     * Amount of visible rows in the chest.
-     */
     public static final int CHEST_INVENTORY_ROWS = 5;
-    /**
-     * Amount of columns in the chest.
-     */
     public static final int CHEST_INVENTORY_COLUMNS = 9;
 
     private final TileColossalChest tile;
@@ -55,11 +44,6 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
     private int lastInventoryHash = -2;
     private boolean firstDetectionCheck = true;
 
-    /**
-     * Make a new instance.
-     * @param inventory The inventory of the player.
-     * @param tile The tile entity that calls the GUI.
-     */
     public ContainerColossalChest(InventoryPlayer inventory, TileColossalChest tile) {
         super(inventory, ColossalChest.getInstance(), Collections.<Slot>emptyList(), new IItemPredicate<Slot>() {
             @Override
@@ -70,12 +54,11 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
         this.tile = tile;
         tile.openInventory(inventory.player);
-        this.chestSlots = Lists.newArrayListWithCapacity(tile.getContainerSize());
-        this.addChestSlots(tile.getContainerSize() / CHEST_INVENTORY_COLUMNS, CHEST_INVENTORY_COLUMNS);
+        this.chestSlots = Lists.newArrayListWithCapacity(tile.getSizeInventory());
+        this.addChestSlots(tile.getSizeInventory() / CHEST_INVENTORY_COLUMNS, CHEST_INVENTORY_COLUMNS);
         this.addPlayerInventory(inventory, INVENTORY_OFFSET_X, INVENTORY_OFFSET_Y);
         updateFilter("");
 
-        // Make sure our inventory is clear, because the server will only send the non-empty slots.
         if (tile.getWorld().isRemote) {
             tile.getInventory().clear();
         }
@@ -114,7 +97,7 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
     @Override
     protected int getSizeInventory() {
-        return tile.getContainerSize();
+        return tile.getSizeInventory();
     }
 
     @Override
@@ -129,16 +112,12 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
     protected void disableSlot(int slotIndex) {
         Slot slot = getSlot(slotIndex);
-        // Yes I know this is ugly.
-        // If you are reading this and know a better way, please tell me.
         slot.xPos = Integer.MIN_VALUE;
         slot.yPos = Integer.MIN_VALUE;
     }
 
     protected void enableSlot(int slotIndex, int row, int column) {
         Slot slot = getSlot(slotIndex);
-        // Yes I know this is ugly.
-        // If you are reading this and know a better way, please tell me.
         slot.xPos = CHEST_INVENTORY_OFFSET_X + column * 18;
         slot.yPos = CHEST_INVENTORY_OFFSET_Y + row * 18;
     }
@@ -182,7 +161,6 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         }
     }
 
-    // Custom implementation of Container#detectAndSendChanges
     protected void detectAndSendChangesOverride() {
         for (int i = 0; i < this.inventorySlots.size(); ++i) {
             ItemStack itemstack = ((Slot)this.inventorySlots.get(i)).getStack();
@@ -207,7 +185,6 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         firstDetectionCheck = false;
     }
 
-    // Adapted from EntityPlayerMP#sendSlotContents
     protected void sendSlotContentsToPlayer(EntityPlayerMP player, Container containerToSend, int slotInd, ItemStack stack) {
         if (!(containerToSend.getSlot(slotInd) instanceof SlotCrafting)) {
             if (!player.isChangingQuantityOnly) {
@@ -251,12 +228,9 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         return tag.toString().length();
     }
 
-    // Modified from EntityPlayerMP#updateCraftingInventory
     public void updateCraftingInventory(EntityPlayerMP player, List<ItemStack> allItems) {
         int maxBufferSize = GeneralConfig.maxPacketBufferSize;
-        // Custom packet sending to be able to handle large inventories
         NetHandlerPlayServer playerNetServerHandler = player.connection;
-        // Modification of logic in EntityPlayerMP#updateCraftingInventory
         NBTTagCompound sendBuffer = new NBTTagCompound();
         NBTTagList sendList = new NBTTagList();
         sendBuffer.setTag("stacks", sendList);
@@ -273,7 +247,6 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
                     sendList.appendTag(tag);
                     bufferSize += tagSize;
                 } else {
-                    // Flush
                     ColossalChests._instance.getPacketHandler().sendToPlayer(new WindowItemsFragmentPacket(windowId, sendBuffer), player);
                     sendBuffer = new NBTTagCompound();
                     sendList = new NBTTagList();
@@ -285,15 +258,11 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
             i++;
         }
         if (sendList.tagCount() > 0) {
-            // Flush
             ColossalChests._instance.getPacketHandler().sendToPlayer(new WindowItemsFragmentPacket(windowId, sendBuffer), player);
         }
         playerNetServerHandler.sendPacket(new SPacketSetSlot(-1, -1, player.inventory.getItemStack()));
     }
 
-    /**
-     * @return Container selection options for inventory tweaks.
-     */
     @ContainerSectionCallback
     public Map<ContainerSection, List<Slot>> getContainerSelection() {
         try {
