@@ -36,6 +36,9 @@ import org.cyclops.colossalchests.block.ColossalChest;
 import org.cyclops.colossalchests.block.ColossalChestConfig;
 import org.cyclops.colossalchests.block.Interface;
 import org.cyclops.colossalchests.block.PropertyMaterial;
+import org.cyclops.colossalchests.inventory.LegacyIndexedInventory;
+import org.cyclops.colossalchests.inventory.LegacyLargeInventory;
+import org.cyclops.colossalchests.inventory.LegacySimpleInventory;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.cyclopscore.block.multi.AllowedBlock;
 import org.cyclops.cyclopscore.block.multi.CubeDetector;
@@ -51,10 +54,7 @@ import org.cyclops.cyclopscore.helper.LocationHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.helper.WorldHelpers;
 import org.cyclops.cyclopscore.inventory.INBTInventory;
-import org.cyclops.colossalchests.inventory.LegacyIndexedInventory;
 import org.cyclops.cyclopscore.inventory.IndexedSlotlessItemHandlerWrapper;
-import org.cyclops.colossalchests.inventory.LegacyLargeInventory;
-import org.cyclops.colossalchests.inventory.LegacySimpleInventory;
 import org.cyclops.cyclopscore.persist.nbt.NBTPersist;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 import org.cyclops.cyclopscore.tileentity.InventoryTileEntityBase;
@@ -98,8 +98,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     private final ITickingTile tickingTileComponent = new TickingTileComponent(this);
 
     @NBTPersist
-    private SimpleInventory lastValidInventory = null;
-    private SimpleInventory inventory = null; // No need to @NBTPersists, this is done because of its getter
+    private LegacySimpleInventory lastValidInventory = null;
+    private LegacySimpleInventory inventory = null; // No need to @NBTPersists, this is done because of its getter
 
     @NBTPersist
     private Vec3i size = LocationHelpers.copyLocation(Vec3i.NULL_VECTOR);
@@ -185,15 +185,15 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
             // items will be ejected into the world for slot index larger than the new size.
             if(this.lastValidInventory != null) {
                 int slot = 0;
-                while(slot < Math.min(this.lastValidInventory.getContainerSize(), this.inventory.getContainerSize())) {
-                    ItemStack contents = this.lastValidInventory.getItem(slot);
+                while(slot < Math.min(this.lastValidInventory.getSizeInventory(), this.inventory.getSizeInventory())) {
+                    ItemStack contents = this.lastValidInventory.getStackInSlot(slot);
                     if (!contents.isEmpty()) {
-                        this.inventory.setItem(slot, contents);
-                        this.lastValidInventory.setItem(slot, ItemStack.EMPTY);
+                        this.inventory.setInventorySlotContents(slot, contents);
+                        this.lastValidInventory.setInventorySlotContents(slot, ItemStack.EMPTY);
                     }
                     slot++;
                 }
-                if(slot < this.lastValidInventory.getContainerSize()) {
+                if(slot < this.lastValidInventory.getSizeInventory()) {
                     MinecraftHelpers.dropItems(getWorld(), this.lastValidInventory, getPos());
                 }
                 this.lastValidInventory = null;
@@ -208,7 +208,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
                     this.lastValidInventory = this.inventory;
                 }
             }
-            this.inventory = new LargeInventory(0, "invalid", 0);
+            this.inventory = new LegacyLargeInventory(0, "invalid", 0);
         }
         sendUpdate();
     }
@@ -229,20 +229,20 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return getWorld() != null && getWorld().isRemote;
     }
 
-    protected LargeInventory constructInventory() {
+    protected LegacyLargeInventory constructInventory() {
         if (!isClientSide() && GeneralConfig.creativeChests) {
             return constructInventoryDebug();
         }
-        return !isClientSide() ? new IndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
-                : new LargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
+        return !isClientSide() ? new LegacyIndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
+                : new LegacyLargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
     }
 
-    protected LargeInventory constructInventoryDebug() {
-        LargeInventory inv = !isClientSide() ? new IndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
-                : new LargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
+    protected LegacyLargeInventory constructInventoryDebug() {
+        LegacyLargeInventory inv = !isClientSide() ? new LegacyIndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
+                : new LegacyLargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
         Random random = new Random();
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            inv.setItem(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
+        for (int i = 0; i < inv.getSizeInventory(); i++) {
+            inv.setInventorySlotContents(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
         }
         return inv;
     }
@@ -251,8 +251,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     public NBTTagCompound getUpdateTag() {
         // Don't send the inventory to the client.
         // The client will receive the data once the gui is opened.
-        SimpleInventory oldInventory = this.inventory;
-        SimpleInventory oldLastInventory = this.lastValidInventory;
+        LegacySimpleInventory oldInventory = this.inventory;
+        LegacySimpleInventory oldLastInventory = this.lastValidInventory;
         this.inventory = null;
         this.lastValidInventory = null;
         this.recreateNullInventory = false;
@@ -265,8 +265,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
 
     @Override
     public void readFromNBT(NBTTagCompound tag) {
-        SimpleInventory oldInventory = this.inventory;
-        SimpleInventory oldLastInventory = this.lastValidInventory;
+        LegacySimpleInventory oldInventory = this.inventory;
+        LegacySimpleInventory oldLastInventory = this.lastValidInventory;
 
         if (getWorld() != null && getWorld().isRemote) {
             // Don't read the inventory on the client.
@@ -420,11 +420,11 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
 
     @Override
     public INBTInventory getInventory() {
-        if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getContainerSize() != calculateInventorySize())) {
+        if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSizeInventory() != calculateInventorySize())) {
             return inventory = constructInventory();
         }
         if(lastValidInventory != null) {
-            return new IndexedInventory();
+            return new LegacyIndexedInventory();
         }
         if(inventory == null && this.recreateNullInventory) {
             inventory = constructInventory();
@@ -487,7 +487,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         int[] slots = facingSlots.get(side);
         if(slots == null) {
             ContiguousSet<Integer> integers = ContiguousSet.create(
-                    Range.closedOpen(0, getContainerSize()), DiscreteDomain.integers()
+                    Range.closedOpen(0, getSizeInventory()), DiscreteDomain.integers()
             );
             slots = ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
             facingSlots.put(side, slots);
