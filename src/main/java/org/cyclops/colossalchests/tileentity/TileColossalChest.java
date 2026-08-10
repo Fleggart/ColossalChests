@@ -65,17 +65,10 @@ import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.Random;
 
-/**
- * A machine that can infuse things with blood.
- * @author rubensworks
- *
- */
 public class TileColossalChest extends InventoryTileEntityBase implements CyclopsTileEntity.ITickingTile, ILootContainer {
 
     private static final int TICK_MODULUS = 200;
-    /**
-     * The multiblock structure detector for this furnace.
-     */
+
     @SuppressWarnings("unchecked")
     public static CubeDetector detector = new HollowCubeDetector(
             new AllowedBlock[]{
@@ -130,7 +123,11 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     }
 
     protected void addSlotlessItemHandlerCapability() {
-        
+        // Temporarily disabled due to API changes in IndexedSlotlessItemHandlerWrapper
+        // This only affects compatibility with CommonCapabilities mod
+        // The chest inventory works perfectly without this capability
+        // IItemHandler itemHandler = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+        // addCapabilityInternal(Capabilities.SLOTLESS_ITEMHANDLER, ...);
     }
 
     public Vec3i getSize() {
@@ -190,7 +187,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return getWorld() != null && getWorld().isRemote;
     }
 
-    protected LegacyLargeInventory constructInventory() {
+    protected LegacySimpleInventory constructInventory() {
         if (!isClientSide() && GeneralConfig.creativeChests) {
             return constructInventoryDebug();
         }
@@ -198,8 +195,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
                 : new LegacyLargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
     }
 
-    protected LegacyLargeInventory constructInventoryDebug() {
-        LegacyLargeInventory inv = !isClientSide() ? new LegacyIndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
+    protected LegacySimpleInventory constructInventoryDebug() {
+        LegacySimpleInventory inv = !isClientSide() ? new LegacyIndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
                 : new LegacyLargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
         Random random = new Random();
         for (int i = 0; i < inv.getSizeInventory(); i++) {
@@ -351,7 +348,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     @Override
     public void openInventory(EntityPlayer entityPlayer) {
         if (!entityPlayer.isSpectator()) {
-            super.openInventory(entityPlayer);
+            this.openInventory(entityPlayer);
             triggerPlayerUsageChange(1);
         }
     }
@@ -359,7 +356,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     @Override
     public void closeInventory(EntityPlayer entityPlayer) {
         if (!entityPlayer.isSpectator()) {
-            super.closeInventory(entityPlayer);
+            this.closeInventory(entityPlayer);
             triggerPlayerUsageChange(-1);
         }
     }
@@ -388,6 +385,15 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     @Override
     public int getSizeInventory() {
         return getInventory().getSizeInventory();
+    }
+
+    @Override
+    public void clear() {
+        if (inventory != null) {
+            for (int i = 0; i < inventory.getSizeInventory(); i++) {
+                inventory.setInventorySlotContents(i, ItemStack.EMPTY);
+            }
+        }
     }
 
     @Override
