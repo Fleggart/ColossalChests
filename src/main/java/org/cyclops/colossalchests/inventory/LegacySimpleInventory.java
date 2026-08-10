@@ -136,15 +136,15 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
     // ===== INBTInventory methods =====
     @Override
     public NBTTagCompound toNBT() {
-        return serializeNBT();
+        return handler.serializeNBT();
     }
 
     @Override
     public void fromNBT(NBTTagCompound nbt) {
-        deserializeNBT(nbt);
+        handler.deserializeNBT(nbt);
     }
 
-    // ===== Custom methods for compatibility =====
+    // ===== Convenience methods =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
     }
