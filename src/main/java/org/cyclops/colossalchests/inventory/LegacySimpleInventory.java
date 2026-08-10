@@ -4,10 +4,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.items.ItemStackHandler;
 import org.cyclops.cyclopscore.inventory.INBTInventory;
 
@@ -40,6 +38,11 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
             }
         }
         return true;
+    }
+
+    // MCP 映射的方法名，由 isEmpty() 映射而来
+    public boolean func_191420_l() {
+        return isEmpty();
     }
 
     @Override
@@ -167,5 +170,14 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
 
     public ItemStack getItem(int index) {
         return handler.getStackInSlot(index);
+    }
+
+    public void setSize(int size) {
+        ItemStackHandler newHandler = new ItemStackHandler(size);
+        int copySize = Math.min(size, handler.getSlots());
+        for (int i = 0; i < copySize; i++) {
+            newHandler.setStackInSlot(i, handler.getStackInSlot(i));
+        }
+        this.handler = newHandler;
     }
 }
