@@ -129,7 +129,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public void openInventory(EntityPlayer entityPlayer) {
         if (!entityPlayer.isSpectator()) {
-            super.openInventory(entityPlayer);
+            this.openInventory(entityPlayer);
             triggerPlayerUsageChange(1);
         }
     }
@@ -137,7 +137,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public void closeInventory(EntityPlayer entityPlayer) {
         if (!entityPlayer.isSpectator()) {
-            super.closeInventory(entityPlayer);
+            this.closeInventory(entityPlayer);
             triggerPlayerUsageChange(-1);
         }
     }
@@ -165,6 +165,18 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public boolean canInsertItem(int index, ItemStack stack, EnumFacing direction) {
         return true;
+    }
+
+    @Override
+    public int getSizeInventory() {
+        return super.getSizeInventory();
+    }
+
+    @Override
+    public void clear() {
+        for (int i = 0; i < getSizeInventory(); i++) {
+            setInventorySlotContents(i, ItemStack.EMPTY);
+        }
     }
 
     @Override
