@@ -130,29 +130,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     }
 
     protected void addSlotlessItemHandlerCapability() {
-        IItemHandler itemHandler = getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-        addCapabilityInternal(Capabilities.SLOTLESS_ITEMHANDLER,
-                new IndexedSlotlessItemHandlerWrapper(itemHandler, new IndexedSlotlessItemHandlerWrapper.IInventoryIndexReference() {
-                    @Override
-                    public int getInventoryStackLimit() {
-                        return getInventory().getInventoryStackLimit();
-                    }
-
-                    @Override
-                    public Map<Item, Int2ObjectMap<ItemStack>> getIndex() {
-                        return ((IndexedSlotlessItemHandlerWrapper.IInventoryIndexReference) getInventory()).getIndex();
-                    }
-
-                    @Override
-                    public PrimitiveIterator.OfInt getEmptySlots() {
-                        return ((IndexedSlotlessItemHandlerWrapper.IInventoryIndexReference) getInventory()).getEmptySlots();
-                    }
-
-                    @Override
-                    public PrimitiveIterator.OfInt getNonEmptySlots() {
-                        return ((IndexedSlotlessItemHandlerWrapper.IInventoryIndexReference) getInventory()).getNonEmptySlots();
-                    }
-                }));
+        
     }
 
     public Vec3i getSize() {
