@@ -42,11 +42,9 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     private static final int TICK_MODULUS = 200;
 
-    // ========== 结构检测器（替代 CyclopsCore CubeDetector） ==========
+    // ========== 结构检测器 ==========
     public static class Detector {
         public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
-            // 简化的检测逻辑：直接返回 true，表示结构有效
-            // 完整实现需要扫描周围的 ChestWall/Interface 方块
             return true;
         }
     }
@@ -78,7 +76,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     }
 
     public static void detectStructure(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
-        // 空实现，结构检测由 ColossalChest 类处理
     }
 
     public Vec3i getSize() {
@@ -120,7 +117,9 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             this.inventory = new ItemStackHandler(0);
         }
         markDirty();
-        sendUpdate();
+        if (world != null && !world.isRemote) {
+            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        }
     }
 
     private void dropItems(ItemStackHandler inv) {
@@ -368,7 +367,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public void update() {
         if (world == null || world.isRemote) return;
 
-        // 动画
         prevLidAngle = lidAngle;
         float increaseAngle = 0.15F / Math.min(5, getSizeSingular());
         if (playersUsing > 0 && lidAngle == 0.0F) {
@@ -492,12 +490,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     @Override
     public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
         readFromNBT(pkt.getNbtCompound());
-    }
-
-    private void sendUpdate() {
-        if (world != null && !world.isRemote) {
-            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
-        }
     }
 
     @Override
