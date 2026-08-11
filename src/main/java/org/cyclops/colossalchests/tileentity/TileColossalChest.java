@@ -395,6 +395,14 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     }
 
     @Override
+    public int getField(int id) {
+        return 0;
+    }
+
+    @Override
+    public void setField(int id, int value) {}
+
+    @Override
     public int getFieldCount() {
         return 0;
     }
