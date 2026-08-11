@@ -127,58 +127,58 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     }
 
     // ===================== IInventory 接口全部实现 =====================
-    // 使用 inventory 字段 (SimpleInventory 类型) 的 API 方法
+    // 直接调用父类 InventoryTileEntity 的方法（它们会操作 inventory）
+    // 如果父类方法是抽象的，则使用 super. 调用（InventoryTileEntity 提供了具体实现）
     
     @Override
     public int getSizeInventory() {
-        return inventory.getSizeInventory();
+        return super.getSizeInventory();
     }
 
     @Override
     public boolean isEmpty() {
-        return inventory.isEmpty();
+        return super.isEmpty();
     }
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        return inventory.getStackInSlot(index);
+        return super.getStackInSlot(index);
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        return inventory.decrStackSize(index, count);
+        return super.decrStackSize(index, count);
     }
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        return inventory.removeStackFromSlot(index);
+        return super.removeStackFromSlot(index);
     }
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-        inventory.setInventorySlotContents(index, stack);
+        super.setInventorySlotContents(index, stack);
     }
 
     @Override
     public int getInventoryStackLimit() {
-        return inventory.getInventoryStackLimit();
+        return super.getInventoryStackLimit();
     }
 
     @Override
     public void markDirty() {
-        inventory.markDirty();
+        super.markDirty();
     }
 
     @Override
     public boolean isUsableByPlayer(EntityPlayer player) {
-        return this.world.getTileEntity(this.pos) == this
-                && player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
+        return super.isUsableByPlayer(player);
     }
 
     @Override
     public void openInventory(EntityPlayer player) {
         if (!player.isSpectator()) {
-            inventory.openInventory(player);
+            super.openInventory(player);
             triggerPlayerUsageChange(1);
         }
     }
@@ -186,34 +186,34 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public void closeInventory(EntityPlayer player) {
         if (!player.isSpectator()) {
-            inventory.closeInventory(player);
+            super.closeInventory(player);
             triggerPlayerUsageChange(-1);
         }
     }
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return inventory.isItemValidForSlot(index, stack);
+        return super.isItemValidForSlot(index, stack);
     }
 
     @Override
     public int getField(int id) {
-        return inventory.getField(id);
+        return super.getField(id);
     }
 
     @Override
     public void setField(int id, int value) {
-        inventory.setField(id, value);
+        super.setField(id, value);
     }
 
     @Override
     public int getFieldCount() {
-        return inventory.getFieldCount();
+        return super.getFieldCount();
     }
 
     @Override
     public void clear() {
-        inventory.clear();
+        super.clear();
     }
 
     // ===== IWorldNameable 接口 =====
@@ -242,8 +242,9 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
 
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
+        int size = super.getSizeInventory();
         ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, inventory.getSizeInventory() - 1), DiscreteDomain.integers()
+                Range.closed(0, size - 1), DiscreteDomain.integers()
         );
         return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
     }
