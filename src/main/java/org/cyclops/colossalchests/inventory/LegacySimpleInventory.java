@@ -40,9 +40,8 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         return true;
     }
 
-    public boolean func_191420_l() {
-        return isEmpty();
-    }
+    // 删除这个方法！MCP 映射会自动处理
+    // public boolean func_191420_l() { return isEmpty(); }
 
     @Override
     public ItemStack getStackInSlot(int index) {
