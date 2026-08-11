@@ -653,7 +653,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     @Override
     public void update() {
-        if (world == null || world.isRemote) return;
+        if (world == null) return;
 
         prevLidAngle = lidAngle;
         float increaseAngle = 0.15F / Math.min(5, getSizeSingular());
