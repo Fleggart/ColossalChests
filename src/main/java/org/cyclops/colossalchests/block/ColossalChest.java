@@ -34,7 +34,6 @@ import org.cyclops.colossalchests.client.gui.container.GuiColossalChest;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.colossalchests.tileentity.TileColossalChest;
 import org.cyclops.cyclopscore.block.multi.CubeDetector;
-import org.cyclops.cyclopscore.block.multi.DetectionResult;
 import org.cyclops.cyclopscore.block.property.BlockProperty;
 import org.cyclops.cyclopscore.block.property.BlockPropertyManagerComponent;
 import org.cyclops.cyclopscore.config.configurable.ConfigurableBlockContainerGui;
@@ -45,11 +44,6 @@ import org.cyclops.cyclopscore.helper.*;
 
 import javax.annotation.Nullable;
 
-/**
- * A machine that can infuse stuff with blood.
- *
- * @author rubensworks
- */
 public class ColossalChest extends ConfigurableBlockContainerGui implements CubeDetector.IDetectionListener {
 
     @BlockProperty
@@ -59,11 +53,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
     private static ColossalChest _instance = null;
 
-    /**
-     * Get the unique instance.
-     *
-     * @return The instance.
-     */
     public static ColossalChest getInstance() {
         return _instance;
     }
@@ -72,7 +61,7 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         super(eConfig, Material.ROCK, TileColossalChest.class);
         this.setHardness(5.0F);
         this.setSoundType(SoundType.WOOD);
-        this.setHarvestLevel("axe", 0); // Wood tier
+        this.setHarvestLevel("axe", 0);
         this.setRotatable(false);
     }
 
@@ -124,24 +113,24 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         return BlockRenderLayer.CUTOUT_MIPPED;
     }
 
-    public static DetectionResult triggerDetector(World world, BlockPos blockPos, boolean valid, @Nullable EntityPlayer player) {
-        DetectionResult detectionResult = TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
-        if (player instanceof EntityPlayerMP && detectionResult.getError() == null) {
+    public static boolean triggerDetector(World world, BlockPos blockPos, boolean valid, @Nullable EntityPlayer player) {
+        boolean result = TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
+        if (player instanceof EntityPlayerMP && result) {
             IBlockState blockState = world.getBlockState(blockPos);
             if (blockState.getValue(ACTIVE)) {
                 PropertyMaterial.Type material = blockState.getValue(MATERIAL);
-
                 TileColossalChest tile = TileHelpers.getSafeTile(world, blockPos, TileColossalChest.class);
                 if (tile == null) {
                     BlockPos corePos = getCoreLocation(world, blockPos);
                     tile = TileHelpers.getSafeTile(world, corePos, TileColossalChest.class);
                 }
-
-                Advancements.CHEST_FORMED.trigger((EntityPlayerMP) player,
-                        Pair.of(material, tile.getSizeSingular()));
+                if (tile != null) {
+                    Advancements.CHEST_FORMED.trigger((EntityPlayerMP) player,
+                            Pair.of(material, tile.getSizeSingular()));
+                }
             }
         }
-        return detectionResult;
+        return result;
     }
 
     @Override
@@ -200,16 +189,9 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         return GuiColossalChest.class;
     }
 
-    /**
-     * Get the core block location.
-     * @param world The world.
-     * @param blockPos The start position to search from.
-     * @return The found location.
-     */
     public static @Nullable BlockPos getCoreLocation(World world, BlockPos blockPos) {
         final Wrapper<BlockPos> tileLocationWrapper = new Wrapper<BlockPos>();
         TileColossalChest.detector.detect(world, blockPos, null, new CubeDetector.IValidationAction() {
-
             @Override
             public L10NHelpers.UnlocalizedString onValidate(BlockPos location, IBlockState blockState) {
                 if (blockState.getBlock() == ColossalChest.getInstance()) {
@@ -217,26 +199,15 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
                 }
                 return null;
             }
-
         }, false);
         return tileLocationWrapper.get();
     }
 
-    /**
-     * Show the structure forming error in the given player chat window.
-     * @param world The world.
-     * @param blockPos The start position.
-     * @param player The player.
-     * @param hand The used hand.
-     */
     public static void addPlayerChatError(World world, BlockPos blockPos, EntityPlayer player, EnumHand hand) {
         if(!world.isRemote && player.getHeldItem(hand).isEmpty()) {
-            DetectionResult result = TileColossalChest.detector.detect(world, blockPos, null,  new MaterialValidationAction(), false);
-            if (result != null && result.getError() != null) {
-                addPlayerChatError(player, result.getError());
-            } else {
-                player.sendMessage(new TextComponentString(L10NHelpers.localize(
-                        "multiblock.colossalchests.error.unexpected")));
+            boolean result = TileColossalChest.detector.detect(world, blockPos, null, new MaterialValidationAction(), false);
+            if (!result) {
+                addPlayerChatError(player, new L10NHelpers.UnlocalizedString("multiblock.colossalchests.error.unexpected"));
             }
         }
     }
@@ -281,7 +252,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
     @Override
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
-        // Meta * 2 because we always want the inactive state
         return super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta * 2, placer, hand);
     }
 
