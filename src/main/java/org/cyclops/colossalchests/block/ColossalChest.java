@@ -15,6 +15,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
@@ -115,6 +116,14 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         return BlockRenderLayer.CUTOUT_MIPPED;
     }
 
+    // ===== 关键修复：处理客户端事件（箱子开合动画） =====
+    @Override
+    public boolean onBlockEventReceived(World worldIn, BlockPos pos, IBlockState state, int eventID, int eventParam) {
+        TileEntity tileentity = worldIn.getTileEntity(pos);
+        return tileentity != null && tileentity.receiveClientEvent(eventID, eventParam);
+    }
+    // =====================================================
+
     public static boolean triggerDetector(World world, BlockPos blockPos, boolean valid, @Nullable EntityPlayer player) {
         // ===== 修复：防止传入 null 导致崩溃 =====
         if (world == null || blockPos == null) {
@@ -207,6 +216,7 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         }
     }
  }
+
     @Override
     public Class<? extends Container> getContainer() {
         return ContainerColossalChest.class;
