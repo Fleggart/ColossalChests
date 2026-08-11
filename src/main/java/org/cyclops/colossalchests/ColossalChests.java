@@ -32,15 +32,7 @@ import java.util.Set;
  * @author rubensworks
  *
  */
-@Mod(
-        modid = Reference.MOD_ID,
-        name = Reference.MOD_NAME,
-        useMetadata = true,
-        version = Reference.MOD_VERSION,
-        dependencies = Reference.MOD_DEPENDENCIES,
-        guiFactory = "org.cyclops.colossalchests.GuiConfigOverview$ExtendedConfigGuiFactory",
-        certificateFingerprint = Reference.MOD_FINGERPRINT
-)
+@Mod(modid = Reference.MOD_ID)
 public class ColossalChests extends ModBaseVersionable {
     
     /**
