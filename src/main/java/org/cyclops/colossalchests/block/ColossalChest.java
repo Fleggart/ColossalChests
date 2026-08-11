@@ -43,6 +43,8 @@ import org.cyclops.cyclopscore.datastructure.Wrapper;
 import org.cyclops.cyclopscore.helper.*;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ColossalChest extends ConfigurableBlockContainerGui implements CubeDetector.IDetectionListener {
 
@@ -154,7 +156,31 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
-        if((Boolean)state.getValue(ACTIVE)) triggerDetector(world, pos, false, null);
+        if (state.getValue(ACTIVE)) {
+            // 获取核心 TileEntity
+            TileColossalChest tile = TileHelpers.getSafeTile(world, pos, TileColossalChest.class);
+            if (tile != null) {
+                // 使用副本遍历，避免并发修改
+                List<Vec3i> interfaces = new ArrayList<>(tile.getInterfaceLocations());
+                for (Vec3i interfacePos : interfaces) {
+                    BlockPos targetPos = new BlockPos(interfacePos);
+                    IBlockState targetState = world.getBlockState(targetPos);
+                    Block targetBlock = targetState.getBlock();
+                    if (targetBlock instanceof ChestWall || 
+                        targetBlock instanceof Interface) {
+                        // 强制设为非活跃状态
+                        world.setBlockState(targetPos, targetState.withProperty(ACTIVE, false), 
+                                MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+                    }
+                }
+                // 清理核心自身
+                world.setBlockState(pos, state.withProperty(ACTIVE, false), 
+                        MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+                // 清空接口列表
+                tile.clearInterfaces();
+            }
+            triggerDetector(world, pos, false, null);
+        }
         super.breakBlock(world, pos, state);
     }
 
