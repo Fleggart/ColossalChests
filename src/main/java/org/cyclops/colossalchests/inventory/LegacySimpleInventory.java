@@ -130,6 +130,7 @@ public class LegacySimpleInventory implements IInventory {
         return new TextComponentString(getName());
     }
 
+    // ===== NBT 方法 =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
     }
@@ -148,6 +149,7 @@ public class LegacySimpleInventory implements IInventory {
         }
     }
 
+    // ===== Convenience methods =====
     public int getSlots() {
         return handler.getSlots();
     }
