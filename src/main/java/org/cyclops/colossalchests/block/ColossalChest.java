@@ -116,20 +116,18 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         return BlockRenderLayer.CUTOUT_MIPPED;
     }
 
-    // ===== 关键修复：处理客户端事件（箱子开合动画） =====
-    @Override
+    // ===== 处理客户端事件（箱子开合动画） =====
+    // 注意：没有 @Override！因为父类没有这个方法
     public boolean onBlockEventReceived(World worldIn, BlockPos pos, IBlockState state, int eventID, int eventParam) {
         TileEntity tileentity = worldIn.getTileEntity(pos);
         return tileentity != null && tileentity.receiveClientEvent(eventID, eventParam);
     }
-    // =====================================================
+    // ==========================================
 
     public static boolean triggerDetector(World world, BlockPos blockPos, boolean valid, @Nullable EntityPlayer player) {
-        // ===== 修复：防止传入 null 导致崩溃 =====
         if (world == null || blockPos == null) {
             return false;
         }
-        // =====================================
         
         boolean result = TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
         if (player instanceof EntityPlayerMP && result) {
@@ -172,7 +170,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
         if (state.getValue(ACTIVE)) {
-            // 强制重置核心方块状态
             world.setBlockState(pos, state.withProperty(ACTIVE, false), 
                     MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
             
@@ -194,7 +191,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
           IBlockState currentState = world.getBlockState(location);
           IBlockState newState = currentState.withProperty(ACTIVE, valid);
         
-          // 使用 Flag = 3（BLOCK_NOTIFY_ALL），强制同步客户端并重新渲染
           world.setBlockState(location, newState, 3);
           world.notifyBlockUpdate(location, currentState, newState, 3);
         
