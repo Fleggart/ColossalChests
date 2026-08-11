@@ -127,69 +127,46 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     }
 
     // ===================== IInventory 接口全部实现 =====================
-    // 直接操作父类的 inventory 字段 (ItemStack[])
+    // 使用 inventory 字段 (SimpleInventory 类型) 的 API 方法
+    
     @Override
     public int getSizeInventory() {
-        return 5;  // UncolossalChest 固定5格
+        return inventory.getSizeInventory();
     }
 
     @Override
     public boolean isEmpty() {
-        for (int i = 0; i < 5; i++) {
-            if (!getStackInSlot(i).isEmpty()) {
-                return false;
-            }
-        }
-        return true;
+        return inventory.isEmpty();
     }
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        return index >= 0 && index < 5 ? inventory[index] : ItemStack.EMPTY;
+        return inventory.getStackInSlot(index);
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        if (index < 0 || index >= 5) return ItemStack.EMPTY;
-        ItemStack stack = inventory[index];
-        if (stack.isEmpty()) return ItemStack.EMPTY;
-        if (stack.getCount() <= count) {
-            ItemStack result = stack.copy();
-            inventory[index] = ItemStack.EMPTY;
-            markDirty();
-            return result;
-        } else {
-            return stack.splitStack(count);
-        }
+        return inventory.decrStackSize(index, count);
     }
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        if (index < 0 || index >= 5) return ItemStack.EMPTY;
-        ItemStack stack = inventory[index];
-        inventory[index] = ItemStack.EMPTY;
-        markDirty();
-        return stack;
+        return inventory.removeStackFromSlot(index);
     }
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-        if (index < 0 || index >= 5) return;
-        inventory[index] = stack;
-        if (!stack.isEmpty() && stack.getCount() > getInventoryStackLimit()) {
-            stack.setCount(getInventoryStackLimit());
-        }
-        markDirty();
+        inventory.setInventorySlotContents(index, stack);
     }
 
     @Override
     public int getInventoryStackLimit() {
-        return 64;
+        return inventory.getInventoryStackLimit();
     }
 
     @Override
     public void markDirty() {
-        super.markDirty();
+        inventory.markDirty();
     }
 
     @Override
@@ -201,7 +178,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public void openInventory(EntityPlayer player) {
         if (!player.isSpectator()) {
-            super.openInventory(player);
+            inventory.openInventory(player);
             triggerPlayerUsageChange(1);
         }
     }
@@ -209,35 +186,34 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public void closeInventory(EntityPlayer player) {
         if (!player.isSpectator()) {
-            super.closeInventory(player);
+            inventory.closeInventory(player);
             triggerPlayerUsageChange(-1);
         }
     }
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return true;
+        return inventory.isItemValidForSlot(index, stack);
     }
 
     @Override
     public int getField(int id) {
-        return 0;
+        return inventory.getField(id);
     }
 
     @Override
-    public void setField(int id, int value) {}
+    public void setField(int id, int value) {
+        inventory.setField(id, value);
+    }
 
     @Override
     public int getFieldCount() {
-        return 0;
+        return inventory.getFieldCount();
     }
 
     @Override
     public void clear() {
-        for (int i = 0; i < 5; i++) {
-            inventory[i] = ItemStack.EMPTY;
-        }
-        markDirty();
+        inventory.clear();
     }
 
     // ===== IWorldNameable 接口 =====
@@ -267,7 +243,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
         ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, 4), DiscreteDomain.integers()
+                Range.closed(0, inventory.getSizeInventory() - 1), DiscreteDomain.integers()
         );
         return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
     }
