@@ -7,6 +7,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import org.cyclops.colossalchests.ColossalChests;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
@@ -15,14 +16,9 @@ import org.cyclops.colossalchests.tileentity.TileColossalChest;
 import org.cyclops.cyclopscore.client.gui.component.button.GuiButtonArrow;
 import org.cyclops.cyclopscore.client.gui.container.ScrollingGuiContainer;
 import org.cyclops.cyclopscore.init.ModBase;
-import net.minecraft.util.ResourceLocation;
+
 import java.io.IOException;
 
-/**
- * GUI for the {@link org.cyclops.colossalchests.block.ColossalChest}.
- * @author rubensworks
- *
- */
 public class GuiColossalChest extends ScrollingGuiContainer {
 
     private static final int TEXTUREWIDTH = 195;
@@ -33,11 +29,6 @@ public class GuiColossalChest extends ScrollingGuiContainer {
     private GuiButtonArrow buttonUp;
     private GuiButtonArrow buttonDown;
 
-    /**
-     * Make a new instance.
-     * @param inventory The inventory of the player.
-     * @param tile The tile entity that calls the GUI.
-     */
     public GuiColossalChest(InventoryPlayer inventory, TileColossalChest tile) {
         super(new ContainerColossalChest(inventory, tile));
         this.tile = tile;
@@ -101,6 +92,7 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         this.drawDefaultBackground();
         int i = (this.width - this.xSize) / 2;
         int j = (this.height - this.ySize) / 2;
+        // 修复：String 转为 ResourceLocation
         this.mc.getTextureManager().bindTexture(new ResourceLocation(getGuiTexture()));
         this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
     }
@@ -110,15 +102,12 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         if (slotIn != null) {
             slotId = slotIn.slotNumber;
         }
-        // Send our own packet, to avoid C0EPacketClickWindow to be sent to the server what would trigger an overflowable S30PacketWindowItems
         windowClick(this.inventorySlots.windowId, slotId, clickedButton, clickType, this.mc.player);
     }
 
-    // Adapted from PlayerControllerMP#windowClick
     protected ItemStack windowClick(int windowId, int slotId, int mouseButtonClicked, ClickType p_78753_4_, EntityPlayer playerIn) {
         short short1 = playerIn.openContainer.getNextTransactionID(playerIn.inventory);
         ItemStack itemstack = playerIn.openContainer.slotClick(slotId, mouseButtonClicked, p_78753_4_, playerIn);
-        // Original: this.netClientHandler.addToSendQueue(new C0EPacketClickWindow(windowId, slotId, mouseButtonClicked, p_78753_4_, itemstack, short1));
         ColossalChests._instance.getPacketHandler().sendToServer(
                 new ClickWindowPacketOverride(windowId, slotId, mouseButtonClicked, p_78753_4_, itemstack, short1));
         return itemstack;
