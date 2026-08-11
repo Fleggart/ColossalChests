@@ -21,7 +21,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.loot.ILootContainer;
 import net.minecraftforge.fml.relauncher.Side;
@@ -339,8 +338,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return true;
     }
 
-    // ===== IInventory 接口实现 =====
-    
+    // ===================== IInventory 接口全部实现 =====================
+    // 所有方法都委托给 getInventory()，不调用 super.
     @Override
     public int getSizeInventory() {
         return getInventory().getSizeInventory();
@@ -441,8 +440,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     public ITextComponent getDisplayName() {
         return getInventory().getDisplayName();
     }
-
-    // ===== 其他方法 =====
+    // ===================== IInventory 接口结束 =====================
 
     private void triggerPlayerUsageChange(int change) {
         if (world != null) {
