@@ -408,6 +408,14 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return hash;
     }
 
+    // ===================== 接口管理 =====================
+
+    public void addInterface(Vec3i location) {
+        if (!interfaceLocations.contains(location)) {
+            interfaceLocations.add(location);
+        }
+    }
+
     public void removeInterface(Vec3i location) {
         interfaceLocations.remove(location);
         markDirty();
@@ -416,6 +424,10 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public void clearInterfaces() {
         interfaceLocations.clear();
         markDirty();
+    }
+
+    public List<Vec3i> getInterfaceLocations() {
+        return Collections.unmodifiableList(interfaceLocations);
     }
 
     // ===================== IInventory =====================
@@ -737,18 +749,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             pos.add(-size, -size, -size),
             pos.add(size + 1, size * 2 + 1, size + 1)
         );
-    }
-
-    // ===================== 接口管理 =====================
-
-    public void addInterface(Vec3i location) {
-        if (!interfaceLocations.contains(location)) {
-            interfaceLocations.add(location);
-        }
-    }
-
-    public List<Vec3i> getInterfaceLocations() {
-        return Collections.unmodifiableList(interfaceLocations);
     }
 
     public boolean canInteractWith(EntityPlayer player) {
