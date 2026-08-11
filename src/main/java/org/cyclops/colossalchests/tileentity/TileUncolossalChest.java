@@ -126,8 +126,8 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         return true;
     }
 
-    // ===== IInventory 接口实现 =====
-    
+    // ===================== IInventory 接口全部实现 =====================
+    // 这里直接调用 super. 是安全的，因为父类 InventoryTileEntity 提供了具体代码
     @Override
     public int getSizeInventory() {
         return super.getSizeInventory();
@@ -228,8 +228,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     public ITextComponent getDisplayName() {
         return super.getDisplayName();
     }
-
-    // ===== 其他方法 =====
+    // ===================== IInventory 接口结束 =====================
 
     private void triggerPlayerUsageChange(int change) {
         if (world != null) {
