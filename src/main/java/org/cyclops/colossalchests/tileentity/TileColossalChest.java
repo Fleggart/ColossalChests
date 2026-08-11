@@ -21,6 +21,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.loot.ILootContainer;
 import net.minecraftforge.fml.relauncher.Side;
@@ -53,16 +54,14 @@ import org.cyclops.cyclopscore.helper.L10NHelpers;
 import org.cyclops.cyclopscore.helper.LocationHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.helper.WorldHelpers;
-import org.cyclops.cyclopscore.inventory.INBTInventory;
 import org.cyclops.cyclopscore.persist.nbt.NBTPersist;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
-import org.cyclops.cyclopscore.tileentity.InventoryTileEntityBase;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class TileColossalChest extends InventoryTileEntityBase implements CyclopsTileEntity.ITickingTile, ILootContainer {
+public class TileColossalChest extends CyclopsTileEntity implements IInventory, CyclopsTileEntity.ITickingTile, ILootContainer {
 
     private static final int TICK_MODULUS = 200;
 
@@ -339,7 +338,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     }
 
     // ===================== IInventory 接口全部实现 =====================
-    // 所有方法都委托给 getInventory()，不调用 super.
     @Override
     public int getSizeInventory() {
         return getInventory().getSizeInventory();
@@ -428,17 +426,18 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
 
     @Override
     public String getName() {
-        return getInventory().getName();
+        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.colossalchest.name",
+                getMaterial().getLocalizedName(), getSizeSingular());
     }
 
     @Override
     public boolean hasCustomName() {
-        return getInventory().hasCustomName();
+        return customName != null && !customName.isEmpty();
     }
 
     @Override
     public ITextComponent getDisplayName() {
-        return getInventory().getDisplayName();
+        return new TextComponentString(getName());
     }
     // ===================== IInventory 接口结束 =====================
 
@@ -449,7 +448,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         }
     }
 
-    public INBTInventory getInventory() {
+    public LegacySimpleInventory getInventory() {
         if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSizeInventory() != calculateInventorySize())) {
             return inventory = constructInventory();
         }
@@ -462,14 +461,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return inventory;
     }
 
-    @Override
-    protected boolean canAccess(int slot, EnumFacing side) {
-        return getSizeSingular() > 1 && super.canAccess(slot, side);
-    }
-
-    @Override
     public boolean canInteractWith(EntityPlayer entityPlayer) {
-        return getSizeSingular() > 1 && super.canInteractWith(entityPlayer);
+        return getSizeSingular() > 1;
     }
 
     @Override
