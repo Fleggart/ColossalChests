@@ -32,7 +32,15 @@ import java.util.Set;
  * @author rubensworks
  *
  */
-@Mod(modid = Reference.MOD_ID)
+@Mod(
+        modid = "colossalchests",
+        name = "ColossalChests",
+        useMetadata = true,
+        version = "@VERSION@",
+        dependencies = "required-after:forge@[14.23.5.2768,);required-after:cyclopscore@[1.3.0,);after:commoncapabilities@[2.4.0,);",
+        guiFactory = "org.cyclops.colossalchests.GuiConfigOverview$ExtendedConfigGuiFactory",
+        certificateFingerprint = "@FINGERPRINT@"
+)
 public class ColossalChests extends ModBaseVersionable {
     
     /**
@@ -45,7 +53,7 @@ public class ColossalChests extends ModBaseVersionable {
     /**
      * The unique instance of this mod.
      */
-    @Instance(value = Reference.MOD_ID)
+    @Instance(value = "colossalchests")
     public static ColossalChests _instance;
 
     public ColossalChests() {
