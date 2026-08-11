@@ -116,6 +116,12 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     }
 
     public static boolean triggerDetector(World world, BlockPos blockPos, boolean valid, @Nullable EntityPlayer player) {
+        // ===== 修复：防止传入 null 导致崩溃 =====
+        if (world == null || blockPos == null) {
+            return false;
+        }
+        // =====================================
+        
         boolean result = TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
         if (player instanceof EntityPlayerMP && result) {
             IBlockState blockState = world.getBlockState(blockPos);
@@ -157,11 +163,10 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
         if (state.getValue(ACTIVE)) {
-            // ===== 关键修复：强制重置核心方块状态 =====
+            // 强制重置核心方块状态
             world.setBlockState(pos, state.withProperty(ACTIVE, false), 
                     MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
             
-            // 清理 TileEntity 数据
             TileColossalChest tile = TileHelpers.getSafeTile(world, pos, TileColossalChest.class);
             if (tile != null) {
                 tile.clearInterfaces();
