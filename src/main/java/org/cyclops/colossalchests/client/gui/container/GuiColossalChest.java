@@ -111,7 +111,7 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         int scrollBarY = this.guiTop + 25;
         int scrollBarHeight = 105;
         int sliderWidth = 12;
-        int sliderHeight = 30;
+        int sliderHeight = 15;
 
         int sliderY = scrollBarY + (int) ((scrollBarHeight - sliderHeight) * this.currentScroll);
         if (sliderY < scrollBarY) sliderY = scrollBarY;
