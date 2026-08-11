@@ -7,9 +7,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.items.ItemStackHandler;
-import org.cyclops.cyclopscore.inventory.INBTInventory;
 
-public class LegacySimpleInventory implements IInventory, INBTInventory {
+public class LegacySimpleInventory implements IInventory {
 
     private ItemStackHandler handler;
     private String name;
@@ -38,11 +37,6 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
             }
         }
         return true;
-    }
-
-    // 这个方法映射到 isEmpty()，不加 @Override 避免冲突
-    public boolean func_191420_l() {
-        return isEmpty();
     }
 
     @Override
@@ -136,30 +130,7 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         return new TextComponentString(getName());
     }
 
-    // ===== INBTInventory methods =====
-    @Override
-    public NBTTagCompound toNBT() {
-        return handler.serializeNBT();
-    }
-
-    @Override
-    public void fromNBT(NBTTagCompound nbt) {
-        handler.deserializeNBT(nbt);
-    }
-
-    @Override
-    public void writeToNBT(NBTTagCompound nbt) {
-        nbt.setTag("inventory", handler.serializeNBT());
-    }
-
-    @Override
-    public void readFromNBT(NBTTagCompound nbt) {
-        if (nbt.hasKey("inventory")) {
-            handler.deserializeNBT(nbt.getCompoundTag("inventory"));
-        }
-    }
-
-    // ===== Convenience methods =====
+    // ===== NBT 方法 =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
     }
@@ -168,6 +139,17 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         handler.deserializeNBT(nbt);
     }
 
+    public void writeToNBT(NBTTagCompound nbt) {
+        nbt.setTag("inventory", handler.serializeNBT());
+    }
+
+    public void readFromNBT(NBTTagCompound nbt) {
+        if (nbt.hasKey("inventory")) {
+            handler.deserializeNBT(nbt.getCompoundTag("inventory"));
+        }
+    }
+
+    // ===== Convenience methods =====
     public int getSlots() {
         return handler.getSlots();
     }
