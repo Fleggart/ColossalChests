@@ -1,5 +1,7 @@
 package org.cyclops.colossalchests;
 
+import net.minecraft.util.ResourceLocation;
+
 /**
  * Class that can hold basic static things that are better not hard-coded
  * like mod details, texture paths, ID's...
@@ -41,7 +43,7 @@ public class Reference {
     public static final String MOD_COMMONCAPABILITIES_VERSION_MIN = "2.4.0";
     public static final String MOD_IRONCHEST = "ironchest";
     
-    // Dependencies - 改为直接使用字符串，不再拼接
+    // Dependencies - 直接写字符串字面量
     public static final String MOD_DEPENDENCIES = 
             "required-after:forge@[14.23.5.2768,);" +
             "required-after:cyclopscore@[1.3.0,);" +
