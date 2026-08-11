@@ -2,6 +2,10 @@ package org.cyclops.colossalchests.client.gui.container;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
@@ -15,7 +19,7 @@ import org.cyclops.colossalchests.network.packet.ClickWindowPacketOverride;
 import org.cyclops.colossalchests.tileentity.TileColossalChest;
 import org.cyclops.cyclopscore.client.gui.component.button.GuiButtonArrow;
 import org.cyclops.cyclopscore.client.gui.container.ScrollingGuiContainer;
-import org.cyclops.cyclopscore.init.ModBase;
+import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
@@ -24,7 +28,7 @@ public class GuiColossalChest extends ScrollingGuiContainer {
     private static final int TEXTUREWIDTH = 195;
     private static final int TEXTUREHEIGHT = 194;
 
-    // 硬编码纹理路径
+    // GUI 纹理
     private static final ResourceLocation GUI_TEXTURE = 
             new ResourceLocation("colossalchests", "textures/gui/colossal_chest.png");
 
@@ -53,6 +57,9 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         this.currentScroll = (float)((double)this.currentScroll - (double)i / (double)getScrollStep());
         this.currentScroll = MathHelper.clamp(this.currentScroll, 0.0F, 1.0F);
         getScrollingInventoryContainer().scrollTo(this.currentScroll);
+        
+        // 调试输出：打印当前滚动值
+        System.out.println("[DEBUG] currentScroll: " + this.currentScroll);
     }
 
     @Override
@@ -67,7 +74,6 @@ public class GuiColossalChest extends ScrollingGuiContainer {
 
     @Override
     public String getGuiTexture() {
-        // 返回硬编码路径
         return "colossalchests:textures/gui/colossal_chest.png";
     }
 
@@ -93,12 +99,63 @@ public class GuiColossalChest extends ScrollingGuiContainer {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+        // 1. 绘制背景纹理
         this.drawDefaultBackground();
         int i = (this.width - this.xSize) / 2;
         int j = (this.height - this.ySize) / 2;
-        // 使用硬编码的 ResourceLocation
         this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
         this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
+
+        // 2. 调用父类绘制滚动条（如果父类有绘制逻辑）
+        super.drawGuiContainerBackgroundLayer(partialTicks, mouseX, mouseY);
+
+        // 3. 调试：绘制红色滑块
+        drawDebugScrollBar();
+    }
+
+    /**
+     * 调试用的红色滑块
+     */
+    private void drawDebugScrollBar() {
+        // 滚动条位置（在 GUI 右侧）
+        int scrollBarX = this.guiLeft + 175;
+        int scrollBarY = this.guiTop + 25;
+        int scrollBarHeight = 105;
+        int sliderWidth = 10;
+        int sliderHeight = 30;
+
+        // 计算滑块位置
+        int sliderY = scrollBarY + (int) ((scrollBarHeight - sliderHeight) * this.currentScroll);
+        
+        // 确保滑块不超出边界
+        if (sliderY < scrollBarY) sliderY = scrollBarY;
+        if (sliderY + sliderHeight > scrollBarY + scrollBarHeight) {
+            sliderY = scrollBarY + scrollBarHeight - sliderHeight;
+        }
+
+        // 调试输出：打印滑块位置
+        System.out.println("[DEBUG] sliderY: " + sliderY + ", scrollBarX: " + scrollBarX);
+
+        // 保存 OpenGL 状态
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.getBuffer();
+
+        // 绘制红色矩形滑块（确保能看到）
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        buffer.pos(scrollBarX, sliderY + sliderHeight, 0).color(255, 0, 0, 255).endVertex();
+        buffer.pos(scrollBarX + sliderWidth, sliderY + sliderHeight, 0).color(255, 0, 0, 255).endVertex();
+        buffer.pos(scrollBarX + sliderWidth, sliderY, 0).color(255, 0, 0, 255).endVertex();
+        buffer.pos(scrollBarX, sliderY, 0).color(255, 0, 0, 255).endVertex();
+        tessellator.draw();
+
+        // 恢复 OpenGL 状态
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableBlend();
     }
 
     @Override
