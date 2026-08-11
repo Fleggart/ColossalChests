@@ -127,40 +127,64 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     }
 
     // ===================== IInventory 接口全部实现 =====================
-    // 这里直接调用 super. 是安全的，因为父类 InventoryTileEntity 提供了具体代码
+    // 直接操作父类的 inventory 字段 (ItemStack[])
     @Override
     public int getSizeInventory() {
-        return super.getSizeInventory();
+        return 5;  // UncolossalChest 固定5格
     }
 
     @Override
     public boolean isEmpty() {
-        return super.isEmpty();
+        for (int i = 0; i < 5; i++) {
+            if (!getStackInSlot(i).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        return super.getStackInSlot(index);
+        return index >= 0 && index < 5 ? inventory[index] : ItemStack.EMPTY;
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        return super.decrStackSize(index, count);
+        if (index < 0 || index >= 5) return ItemStack.EMPTY;
+        ItemStack stack = inventory[index];
+        if (stack.isEmpty()) return ItemStack.EMPTY;
+        if (stack.getCount() <= count) {
+            ItemStack result = stack.copy();
+            inventory[index] = ItemStack.EMPTY;
+            markDirty();
+            return result;
+        } else {
+            return stack.splitStack(count);
+        }
     }
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        return super.removeStackFromSlot(index);
+        if (index < 0 || index >= 5) return ItemStack.EMPTY;
+        ItemStack stack = inventory[index];
+        inventory[index] = ItemStack.EMPTY;
+        markDirty();
+        return stack;
     }
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-        super.setInventorySlotContents(index, stack);
+        if (index < 0 || index >= 5) return;
+        inventory[index] = stack;
+        if (!stack.isEmpty() && stack.getCount() > getInventoryStackLimit()) {
+            stack.setCount(getInventoryStackLimit());
+        }
+        markDirty();
     }
 
     @Override
     public int getInventoryStackLimit() {
-        return super.getInventoryStackLimit();
+        return 64;
     }
 
     @Override
@@ -170,7 +194,8 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
 
     @Override
     public boolean isUsableByPlayer(EntityPlayer player) {
-        return super.isUsableByPlayer(player);
+        return this.world.getTileEntity(this.pos) == this
+                && player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
     }
 
     @Override
@@ -191,44 +216,46 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return super.isItemValidForSlot(index, stack);
+        return true;
     }
 
     @Override
     public int getField(int id) {
-        return super.getField(id);
+        return 0;
     }
 
     @Override
-    public void setField(int id, int value) {
-        super.setField(id, value);
-    }
+    public void setField(int id, int value) {}
 
     @Override
     public int getFieldCount() {
-        return super.getFieldCount();
+        return 0;
     }
 
     @Override
     public void clear() {
-        super.clear();
+        for (int i = 0; i < 5; i++) {
+            inventory[i] = ItemStack.EMPTY;
+        }
+        markDirty();
     }
 
+    // ===== IWorldNameable 接口 =====
     @Override
     public String getName() {
-        return super.getName();
+        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.uncolossalchest.name");
     }
 
     @Override
     public boolean hasCustomName() {
-        return super.hasCustomName();
+        return customName != null && !customName.isEmpty();
     }
 
     @Override
     public ITextComponent getDisplayName() {
-        return super.getDisplayName();
+        return new TextComponentString(getName());
     }
-    // ===================== IInventory 接口结束 =====================
+    // ===================== 接口结束 =====================
 
     private void triggerPlayerUsageChange(int change) {
         if (world != null) {
@@ -240,7 +267,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
         ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, getSizeInventory()), DiscreteDomain.integers()
+                Range.closed(0, 4), DiscreteDomain.integers()
         );
         return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
     }
