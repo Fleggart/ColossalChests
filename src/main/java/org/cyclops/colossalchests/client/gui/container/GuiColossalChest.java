@@ -28,7 +28,6 @@ public class GuiColossalChest extends ScrollingGuiContainer {
     private static final int TEXTUREWIDTH = 195;
     private static final int TEXTUREHEIGHT = 194;
 
-    // GUI 纹理
     private static final ResourceLocation GUI_TEXTURE = 
             new ResourceLocation("colossalchests", "textures/gui/colossal_chest.png");
 
@@ -57,9 +56,6 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         this.currentScroll = (float)((double)this.currentScroll - (double)i / (double)getScrollStep());
         this.currentScroll = MathHelper.clamp(this.currentScroll, 0.0F, 1.0F);
         getScrollingInventoryContainer().scrollTo(this.currentScroll);
-        
-        // 调试输出：打印当前滚动值
-        System.out.println("[DEBUG] currentScroll: " + this.currentScroll);
     }
 
     @Override
@@ -106,37 +102,23 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
         this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
 
-        // 2. 调用父类绘制滚动条（如果父类有绘制逻辑）
-        super.drawGuiContainerBackgroundLayer(partialTicks, mouseX, mouseY);
-
-        // 3. 调试：绘制红色滑块
+        // 2. 绘制红色滑块（调试用）
         drawDebugScrollBar();
     }
 
-    /**
-     * 调试用的红色滑块
-     */
     private void drawDebugScrollBar() {
-        // 滚动条位置（在 GUI 右侧）
         int scrollBarX = this.guiLeft + 175;
         int scrollBarY = this.guiTop + 25;
         int scrollBarHeight = 105;
         int sliderWidth = 10;
         int sliderHeight = 30;
 
-        // 计算滑块位置
         int sliderY = scrollBarY + (int) ((scrollBarHeight - sliderHeight) * this.currentScroll);
-        
-        // 确保滑块不超出边界
         if (sliderY < scrollBarY) sliderY = scrollBarY;
         if (sliderY + sliderHeight > scrollBarY + scrollBarHeight) {
             sliderY = scrollBarY + scrollBarHeight - sliderHeight;
         }
 
-        // 调试输出：打印滑块位置
-        System.out.println("[DEBUG] sliderY: " + sliderY + ", scrollBarX: " + scrollBarX);
-
-        // 保存 OpenGL 状态
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
@@ -145,7 +127,6 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
 
-        // 绘制红色矩形滑块（确保能看到）
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
         buffer.pos(scrollBarX, sliderY + sliderHeight, 0).color(255, 0, 0, 255).endVertex();
         buffer.pos(scrollBarX + sliderWidth, sliderY + sliderHeight, 0).color(255, 0, 0, 255).endVertex();
@@ -153,7 +134,6 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         buffer.pos(scrollBarX, sliderY, 0).color(255, 0, 0, 255).endVertex();
         tessellator.draw();
 
-        // 恢复 OpenGL 状态
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
     }
