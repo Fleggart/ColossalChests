@@ -32,32 +32,17 @@ import java.util.Set;
  * @author rubensworks
  *
  */
-@Mod(
-        modid = "colossalchests",
-        name = "ColossalChests",
-        useMetadata = true,
-        version = "@VERSION@",
-        dependencies = "required-after:forge@[14.23.5.2768,);required-after:cyclopscore@[1.3.0,);after:commoncapabilities@[2.4.0,);",
-        guiFactory = "org.cyclops.colossalchests.GuiConfigOverview$ExtendedConfigGuiFactory",
-        certificateFingerprint = "@FINGERPRINT@"
-)
+@Mod(modid = "colossalchests")
 public class ColossalChests extends ModBaseVersionable {
     
-    /**
-     * The proxy of this mod, depending on 'side' a different proxy will be inside this field.
-     * @see net.minecraftforge.fml.common.SidedProxy
-     */
     @SidedProxy(clientSide = "org.cyclops.colossalchests.proxy.ClientProxy", serverSide = "org.cyclops.colossalchests.proxy.CommonProxy")
     public static ICommonProxy proxy;
     
-    /**
-     * The unique instance of this mod.
-     */
-    @Instance(value = "colossalchests")
+    @Instance("colossalchests")
     public static ColossalChests _instance;
 
     public ColossalChests() {
-        super(Reference.MOD_ID, Reference.MOD_NAME, Reference.MOD_VERSION);
+        super("colossalchests", "ColossalChests", "@VERSION@");
     }
 
     @Override
@@ -71,16 +56,12 @@ public class ColossalChests extends ModBaseVersionable {
             protected void loadPredefineds(Map<String, ItemStack> predefinedItems, Set<String> predefinedValues) {
                 super.loadPredefineds(predefinedItems, predefinedValues);
                 if(GeneralConfig.metalVariants) {
-                    predefinedValues.add(Reference.MOD_ID + ":metalVariants");
+                    predefinedValues.add("colossalchests:metalVariants");
                 }
             }
         };
     }
 
-    /**
-     * The pre-initialization, will register required configs.
-     * @param event The Forge event required for this.
-     */
     @EventHandler
     @Override
     public void preInit(FMLPreInitializationEvent event) {
@@ -88,50 +69,30 @@ public class ColossalChests extends ModBaseVersionable {
         Advancements.load();
     }
     
-    /**
-     * Register the config dependent things like world generation and proxy handlers.
-     * @param event The Forge event required for this.
-     */
     @EventHandler
     @Override
     public void init(FMLInitializationEvent event) {
         super.init(event);
     }
     
-    /**
-     * Register the event hooks.
-     * @param event The Forge event required for this.
-     */
     @EventHandler
     @Override
     public void postInit(FMLPostInitializationEvent event) {
         super.postInit(event);
     }
     
-    /**
-     * Register the things that are related to server starting, like commands.
-     * @param event The Forge event required for this.
-     */
     @EventHandler
     @Override
     public void onServerStarting(FMLServerStartingEvent event) {
         super.onServerStarting(event);
     }
 
-    /**
-     * Register the things that are related to server starting.
-     * @param event The Forge event required for this.
-     */
     @EventHandler
     @Override
     public void onServerStarted(FMLServerStartedEvent event) {
         super.onServerStarted(event);
     }
 
-    /**
-     * Register the things that are related to server stopping, like persistent storage.
-     * @param event The Forge event required for this.
-     */
     @EventHandler
     @Override
     public void onServerStopping(FMLServerStoppingEvent event) {
@@ -167,19 +128,10 @@ public class ColossalChests extends ModBaseVersionable {
         return proxy;
     }
 
-    /**
-     * Log a new info message for this mod.
-     * @param message The message to show.
-     */
     public static void clog(String message) {
         clog(Level.INFO, message);
     }
     
-    /**
-     * Log a new message of the given level for this mod.
-     * @param level The level in which the message must be shown.
-     * @param message The message to show.
-     */
     public static void clog(Level level, String message) {
         ColossalChests._instance.getLoggerHelper().log(level, message);
     }
