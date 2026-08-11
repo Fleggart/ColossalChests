@@ -30,10 +30,15 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.ItemStackHandler;
 import org.apache.commons.lang3.ArrayUtils;
 import org.cyclops.colossalchests.GeneralConfig;
+import org.cyclops.colossalchests.block.ChestWall;
 import org.cyclops.colossalchests.block.ColossalChest;
 import org.cyclops.colossalchests.block.ColossalChestConfig;
+import org.cyclops.colossalchests.block.Interface;
 import org.cyclops.colossalchests.block.PropertyMaterial;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
+import org.cyclops.cyclopscore.helper.L10NHelpers;
+import org.cyclops.cyclopscore.helper.LocationHelpers;
+import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
 import java.util.*;
@@ -45,7 +50,190 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     // ========== 结构检测器 ==========
     public static class Detector {
         public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
-            return true;
+            if (world == null || center == null) return false;
+            
+            // 扫描所有方向，找出巨型箱子的边界
+            int minX = center.getX(), minY = center.getY(), minZ = center.getZ();
+            int maxX = center.getX(), maxY = center.getY(), maxZ = center.getZ();
+            
+            // 检查方块是否属于巨型箱子结构
+            java.util.function.Predicate<IBlockState> isChestBlock = state -> {
+                Block block = state.getBlock();
+                return block == ColossalChest.getInstance() || 
+                       block instanceof ChestWall || 
+                       block instanceof Interface;
+            };
+            
+            // 向正方向扩展 X
+            while (true) {
+                BlockPos check = new BlockPos(maxX + 1, center.getY(), center.getZ());
+                if (!world.isBlockLoaded(check)) break;
+                IBlockState state = world.getBlockState(check);
+                if (isChestBlock.test(state)) {
+                    maxX++;
+                } else {
+                    break;
+                }
+            }
+            // 向正方向扩展 Y
+            while (true) {
+                BlockPos check = new BlockPos(center.getX(), maxY + 1, center.getZ());
+                if (!world.isBlockLoaded(check)) break;
+                IBlockState state = world.getBlockState(check);
+                if (isChestBlock.test(state)) {
+                    maxY++;
+                } else {
+                    break;
+                }
+            }
+            // 向正方向扩展 Z
+            while (true) {
+                BlockPos check = new BlockPos(center.getX(), center.getY(), maxZ + 1);
+                if (!world.isBlockLoaded(check)) break;
+                IBlockState state = world.getBlockState(check);
+                if (isChestBlock.test(state)) {
+                    maxZ++;
+                } else {
+                    break;
+                }
+            }
+            
+            // 向负方向扩展 X
+            while (true) {
+                BlockPos check = new BlockPos(minX - 1, center.getY(), center.getZ());
+                if (!world.isBlockLoaded(check)) break;
+                IBlockState state = world.getBlockState(check);
+                if (isChestBlock.test(state)) {
+                    minX--;
+                } else {
+                    break;
+                }
+            }
+            // 向负方向扩展 Y
+            while (true) {
+                BlockPos check = new BlockPos(center.getX(), minY - 1, center.getZ());
+                if (!world.isBlockLoaded(check)) break;
+                IBlockState state = world.getBlockState(check);
+                if (isChestBlock.test(state)) {
+                    minY--;
+                } else {
+                    break;
+                }
+            }
+            // 向负方向扩展 Z
+            while (true) {
+                BlockPos check = new BlockPos(center.getX(), center.getY(), minZ - 1);
+                if (!world.isBlockLoaded(check)) break;
+                IBlockState state = world.getBlockState(check);
+                if (isChestBlock.test(state)) {
+                    minZ--;
+                } else {
+                    break;
+                }
+            }
+            
+            int sizeX = maxX - minX + 1;
+            int sizeY = maxY - minY + 1;
+            int sizeZ = maxZ - minZ + 1;
+            
+            // 检查是否是有效的巨型箱子（至少 2x2x2，且不超过最大尺寸）
+            Vec3i maxSize = getMaxSize();
+            if (sizeX >= 2 && sizeY >= 2 && sizeZ >= 2 &&
+                sizeX <= maxSize.getX() + 1 && sizeY <= maxSize.getY() + 1 && sizeZ <= maxSize.getZ() + 1) {
+                
+                Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
+                BlockPos origin = new BlockPos(minX, minY, minZ);
+                
+                // 检查是否所有方块都是同一材质
+                PropertyMaterial.Type material = null;
+                boolean valid = true;
+                int coreCount = 0;
+                
+                for (int x = minX; x <= maxX; x++) {
+                    for (int y = minY; y <= maxY; y++) {
+                        for (int z = minZ; z <= maxZ; z++) {
+                            BlockPos pos = new BlockPos(x, y, z);
+                            IBlockState state = world.getBlockState(pos);
+                            Block block = state.getBlock();
+                            
+                            if (block == ColossalChest.getInstance()) {
+                                coreCount++;
+                                PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
+                                if (material == null) material = mat;
+                                else if (material != mat) valid = false;
+                            } else if (block instanceof ChestWall || block instanceof Interface) {
+                                PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
+                                if (material == null) material = mat;
+                                else if (material != mat) valid = false;
+                            } else {
+                                valid = false;
+                            }
+                        }
+                    }
+                }
+                
+                // 必须有且仅有一个核心方块，且所有方块材质一致
+                if (valid && coreCount == 1 && material != null) {
+                    // 更新所有方块的状态
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                BlockPos pos = new BlockPos(x, y, z);
+                                IBlockState state = world.getBlockState(pos);
+                                Block block = state.getBlock();
+                                
+                                if (block == ColossalChest.getInstance() || 
+                                    block instanceof ChestWall || 
+                                    block instanceof Interface) {
+                                    
+                                    // 设置 ACTIVE 状态
+                                    IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
+                                    if (block == ColossalChest.getInstance()) {
+                                        newState = newState.withProperty(ColossalChest.MATERIAL, material);
+                                    }
+                                    world.setBlockState(pos, newState, MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+                                    
+                                    // 更新 TileEntity
+                                    if (block == ColossalChest.getInstance()) {
+                                        TileColossalChest tile = (TileColossalChest) world.getTileEntity(pos);
+                                        if (tile != null) {
+                                            tile.setMaterial(material);
+                                            tile.setSize(size);
+                                            tile.setCenter(new Vec3d(
+                                                origin.getX() + ((double) size.getX()) / 2,
+                                                origin.getY() + ((double) size.getY()) / 2,
+                                                origin.getZ() + ((double) size.getZ()) / 2
+                                            ));
+                                            tile.addInterface(pos);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return true;
+                }
+            }
+            
+            // 结构无效，清理所有方块的状态
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        BlockPos pos = new BlockPos(x, y, z);
+                        IBlockState state = world.getBlockState(pos);
+                        Block block = state.getBlock();
+                        if (block == ColossalChest.getInstance() || 
+                            block instanceof ChestWall || 
+                            block instanceof Interface) {
+                            if (state.getValue(ColossalChest.ACTIVE)) {
+                                world.setBlockState(pos, state.withProperty(ColossalChest.ACTIVE, false), 
+                                        MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
         }
     }
     public static final Detector detector = new Detector();
@@ -304,12 +492,12 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     @Override
     public void clear() {
         if (inventory != null) {
-           for (int i = 0; i < inventory.getSlots(); i++) {
-               inventory.setStackInSlot(i, ItemStack.EMPTY);
+            for (int i = 0; i < inventory.getSlots(); i++) {
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
         }
+        markDirty();
     }
-    markDirty();
-}
 
     // ===================== IWorldNameable =====================
 
