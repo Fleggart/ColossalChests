@@ -24,6 +24,10 @@ public class GuiColossalChest extends ScrollingGuiContainer {
     private static final int TEXTUREWIDTH = 195;
     private static final int TEXTUREHEIGHT = 194;
 
+    // 硬编码纹理路径
+    private static final ResourceLocation GUI_TEXTURE = 
+            new ResourceLocation("colossalchests", "textures/gui/colossal_chest.png");
+
     private final TileColossalChest tile;
 
     private GuiButtonArrow buttonUp;
@@ -63,8 +67,8 @@ public class GuiColossalChest extends ScrollingGuiContainer {
 
     @Override
     public String getGuiTexture() {
-        return getContainer().getGuiProvider().getModGui().getReferenceValue(ModBase.REFKEY_TEXTURE_PATH_GUI)
-                + "colossal_chest.png";
+        // 返回硬编码路径
+        return "colossalchests:textures/gui/colossal_chest.png";
     }
 
     @Override
@@ -92,8 +96,8 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         this.drawDefaultBackground();
         int i = (this.width - this.xSize) / 2;
         int j = (this.height - this.ySize) / 2;
-        // 修复：String 转为 ResourceLocation
-        this.mc.getTextureManager().bindTexture(new ResourceLocation(getGuiTexture()));
+        // 使用硬编码的 ResourceLocation
+        this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
         this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
     }
 
