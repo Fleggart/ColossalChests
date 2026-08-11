@@ -126,21 +126,110 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         return true;
     }
 
+    // ===== IInventory 接口实现 =====
+    
     @Override
-    public void openInventory(EntityPlayer entityPlayer) {
-        if (!entityPlayer.isSpectator()) {
-            super.openInventory(entityPlayer);
+    public int getSizeInventory() {
+        return super.getSizeInventory();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return super.isEmpty();
+    }
+
+    @Override
+    public ItemStack getStackInSlot(int index) {
+        return super.getStackInSlot(index);
+    }
+
+    @Override
+    public ItemStack decrStackSize(int index, int count) {
+        return super.decrStackSize(index, count);
+    }
+
+    @Override
+    public ItemStack removeStackFromSlot(int index) {
+        return super.removeStackFromSlot(index);
+    }
+
+    @Override
+    public void setInventorySlotContents(int index, ItemStack stack) {
+        super.setInventorySlotContents(index, stack);
+    }
+
+    @Override
+    public int getInventoryStackLimit() {
+        return super.getInventoryStackLimit();
+    }
+
+    @Override
+    public void markDirty() {
+        super.markDirty();
+    }
+
+    @Override
+    public boolean isUsableByPlayer(EntityPlayer player) {
+        return super.isUsableByPlayer(player);
+    }
+
+    @Override
+    public void openInventory(EntityPlayer player) {
+        if (!player.isSpectator()) {
+            super.openInventory(player);
             triggerPlayerUsageChange(1);
         }
     }
 
     @Override
-    public void closeInventory(EntityPlayer entityPlayer) {
-        if (!entityPlayer.isSpectator()) {
-            super.closeInventory(entityPlayer);
+    public void closeInventory(EntityPlayer player) {
+        if (!player.isSpectator()) {
+            super.closeInventory(player);
             triggerPlayerUsageChange(-1);
         }
     }
+
+    @Override
+    public boolean isItemValidForSlot(int index, ItemStack stack) {
+        return super.isItemValidForSlot(index, stack);
+    }
+
+    @Override
+    public int getField(int id) {
+        return super.getField(id);
+    }
+
+    @Override
+    public void setField(int id, int value) {
+        super.setField(id, value);
+    }
+
+    @Override
+    public int getFieldCount() {
+        return super.getFieldCount();
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+    }
+
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @Override
+    public boolean hasCustomName() {
+        return super.hasCustomName();
+    }
+
+    @Override
+    public ITextComponent getDisplayName() {
+        return super.getDisplayName();
+    }
+
+    // ===== 其他方法 =====
 
     private void triggerPlayerUsageChange(int change) {
         if (world != null) {
@@ -152,7 +241,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
         ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, super.getSizeInventory()), DiscreteDomain.integers()
+                Range.closed(0, getSizeInventory()), DiscreteDomain.integers()
         );
         return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
     }
@@ -167,48 +256,8 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         return true;
     }
 
-    @Override
-    public int getSizeInventory() {
-        return super.getSizeInventory();
-    }
-
-    @Override
-    public void clear() {
-        for (int i = 0; i < super.getSizeInventory(); i++) {
-            super.setInventorySlotContents(i, ItemStack.EMPTY);
-        }
-    }
-
-    @Override
-    public int getField(int id) {
-        return 0;
-    }
-
-    @Override
-    public void setField(int id, int value) {}
-
-    @Override
-    public int getFieldCount() {
-        return 0;
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return customName != null && customName.length() > 0;
-    }
-
     public void setCustomName(String name) {
         this.customName = name;
-    }
-
-    @Override
-    public String getName() {
-        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.uncolossalchest.name");
-    }
-
-    @Override
-    public ITextComponent getDisplayName() {
-        return new TextComponentString(getName());
     }
 
     @Override
