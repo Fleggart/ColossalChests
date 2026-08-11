@@ -180,24 +180,33 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
     @Override
     public void onDetect(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
-        Block block = world.getBlockState(location).getBlock();
-        if(block == this) {
-            world.setBlockState(location, world.getBlockState(location).withProperty(ACTIVE, valid), MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
-            TileColossalChest tile = TileHelpers.getSafeTile(world, location, TileColossalChest.class);
-            if(tile != null) {
-                tile.setMaterial(BlockHelpers.getSafeBlockStateProperty(
-                        world.getBlockState(location), ColossalChest.MATERIAL, PropertyMaterial.Type.WOOD));
-                tile.setSize(valid ? size : Vec3i.NULL_VECTOR);
-                tile.setCenter(new Vec3d(
-                        originCorner.getX() + ((double) size.getX()) / 2,
-                        originCorner.getY() + ((double) size.getY()) / 2,
-                        originCorner.getZ() + ((double) size.getZ()) / 2
-                ));
+       Block block = world.getBlockState(location).getBlock();
+       if (block == this) {
+          IBlockState currentState = world.getBlockState(location);
+          IBlockState newState = currentState.withProperty(ACTIVE, valid);
+        
+          // 使用 Flag = 3（BLOCK_NOTIFY_ALL），强制同步客户端并重新渲染
+          world.setBlockState(location, newState, 3);
+          world.notifyBlockUpdate(location, currentState, newState, 3);
+        
+          TileColossalChest tile = TileHelpers.getSafeTile(world, location, TileColossalChest.class);
+          if (tile != null) {
+             tile.setMaterial(BlockHelpers.getSafeBlockStateProperty(
+                    world.getBlockState(location), ColossalChest.MATERIAL, PropertyMaterial.Type.WOOD));
+             tile.setSize(valid ? size : Vec3i.NULL_VECTOR);
+             tile.setCenter(new Vec3d(
+                    originCorner.getX() + ((double) size.getX()) / 2,
+                    originCorner.getY() + ((double) size.getY()) / 2,
+                    originCorner.getZ() + ((double) size.getZ()) / 2
+             ));
+             if (valid) {
                 tile.addInterface(location);
+             } else {
+                tile.removeInterface(location);
             }
         }
     }
-
+ }
     @Override
     public Class<? extends Container> getContainer() {
         return ContainerColossalChest.class;
