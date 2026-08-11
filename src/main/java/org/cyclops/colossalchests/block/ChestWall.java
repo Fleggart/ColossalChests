@@ -33,12 +33,8 @@ import org.cyclops.cyclopscore.config.extendedconfig.BlockConfig;
 import org.cyclops.cyclopscore.config.extendedconfig.ExtendedConfig;
 import org.cyclops.cyclopscore.helper.BlockHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
+import org.cyclops.cyclopscore.helper.TileHelpers;
 
-/**
- * Part of the Colossal Blood Chest multiblock structure.
- * @author rubensworks
- *
- */
 public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetectionListener {
 
     @BlockProperty
@@ -48,10 +44,6 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
 
     private static ChestWall _instance = null;
 
-    /**
-     * Get the unique instance.
-     * @return The instance.
-     */
     public static ChestWall getInstance() {
         return _instance;
     }
@@ -60,7 +52,7 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
         super(eConfig, Material.ROCK);
         this.setHardness(5.0F);
         this.setSoundType(SoundType.WOOD);
-        this.setHarvestLevel("axe", 0); // Wood tier
+        this.setHarvestLevel("axe", 0);
     }
 
     @SuppressWarnings("deprecation")
@@ -115,7 +107,17 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
 
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
-        if((Boolean)state.getValue(ACTIVE)) ColossalChest.triggerDetector(world, pos, false, null);
+        if (state.getValue(ACTIVE)) {
+            // 从核心 TileEntity 的接口列表中移除自己
+            BlockPos corePos = ColossalChest.getCoreLocation(world, pos);
+            if (corePos != null) {
+                TileColossalChest core = TileHelpers.getSafeTile(world, corePos, TileColossalChest.class);
+                if (core != null) {
+                    core.removeInterface(pos);
+                }
+            }
+            ColossalChest.triggerDetector(world, pos, false, null);
+        }
         super.breakBlock(world, pos, state);
     }
 
@@ -172,7 +174,6 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
 
     @Override
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
-        // Meta * 2 because we always want the inactive state
         return super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta * 2, placer, hand);
     }
 
