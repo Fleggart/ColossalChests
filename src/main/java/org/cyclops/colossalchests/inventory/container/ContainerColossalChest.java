@@ -60,9 +60,11 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         updateFilter("");
 
         if (tile.getWorld().isRemote) {
-            tile.getInventory().clear();
-        }
-    }
+           ItemStackHandler inv = tile.getInventory();
+           for (int i = 0; i < inv.getSlots(); i++) {
+               inv.setStackInSlot(i, ItemStack.EMPTY);
+           }
+     }
 
     @SuppressWarnings("unchecked")
     @Override
