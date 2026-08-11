@@ -108,7 +108,7 @@ public class GuiColossalChest extends ScrollingGuiContainer {
      */
     private void drawSliderFromTexture() {
         int scrollBarX = this.guiLeft + 175;
-        int scrollBarY = this.guiTop + 25;
+        int scrollBarY = this.guiTop + 20;
         int scrollBarHeight = 105;
         
         // 滑块尺寸（与纹理中的图案大小一致）
