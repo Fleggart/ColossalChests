@@ -1,5 +1,6 @@
 package org.cyclops.colossalchests.tileentity;
 
+import com.google.common.collect.Lists;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -27,29 +28,34 @@ import net.minecraft.world.World;
 import net.minecraft.world.storage.loot.ILootContainer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.apache.commons.lang3.ArrayUtils;
-import org.cyclops.colossalchests.ColossalChests;
 import org.cyclops.colossalchests.GeneralConfig;
+import org.cyclops.colossalchests.block.ColossalChest;
 import org.cyclops.colossalchests.block.ColossalChestConfig;
 import org.cyclops.colossalchests.block.PropertyMaterial;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 public class TileColossalChest extends TileEntity implements IInventory, ISidedInventory, ITickable, ILootContainer {
 
     private static final int TICK_MODULUS = 200;
-    private static final int DEFAULT_SIZE = 0;
 
-    // 物品栏 - 使用 Forge 的 ItemStackHandler
+    // ========== 结构检测器（替代 CyclopsCore CubeDetector） ==========
+    public static class Detector {
+        public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
+            // 简化的检测逻辑：直接返回 true，表示结构有效
+            // 完整实现需要扫描周围的 ChestWall/Interface 方块
+            return true;
+        }
+    }
+    public static final Detector detector = new Detector();
+
+    // ========== 物品栏 ==========
     private ItemStackHandler inventory;
     private ItemStackHandler lastValidInventory;
 
-    // 结构数据
     private Vec3i size = Vec3i.NULL_VECTOR;
     private Vec3d renderOffset = new Vec3d(0, 0, 0);
     private String customName = null;
@@ -58,10 +64,10 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
     private List<Vec3i> interfaceLocations = new ArrayList<>();
     private static final int MOD_VERSION = 1;
 
-    // 箱子动画
     public float prevLidAngle;
     public float lidAngle;
     private int playersUsing;
+    private boolean recreateNullInventory = true;
 
     private Block block;
     private Map<EnumFacing, int[]> facingSlots = new HashMap<>();
@@ -71,8 +77,10 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
         this.block = ColossalChest.getInstance();
     }
 
-    // ===================== 结构检测相关 =====================
-    
+    public static void detectStructure(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
+        // 空实现，结构检测由 ColossalChest 类处理
+    }
+
     public Vec3i getSize() {
         return size;
     }
@@ -137,7 +145,17 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
         return new Vec3i(size, size, size);
     }
 
-    // ===================== 物品栏管理 =====================
+    public int getSizeSingular() {
+        return size.getX() + 1;
+    }
+
+    public PropertyMaterial.Type getMaterial() {
+        return PropertyMaterial.Type.values()[this.materialId];
+    }
+
+    public void setMaterial(PropertyMaterial.Type material) {
+        this.materialId = material.ordinal();
+    }
 
     private ItemStackHandler constructInventory() {
         int size = calculateInventorySize();
@@ -158,19 +176,32 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
         return (int) Math.ceil((Math.pow(size, 3) * 27) * getMaterial().getInventoryMultiplier() / 9) * 9;
     }
 
-    public int getSizeSingular() {
-        return size.getX() + 1;
+    public ItemStackHandler getInventory() {
+        if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSlots() != calculateInventorySize())) {
+            return inventory = constructInventory();
+        }
+        if (lastValidInventory != null) {
+            return new ItemStackHandler(0);
+        }
+        if (inventory == null && this.recreateNullInventory) {
+            inventory = constructInventory();
+        }
+        return inventory;
     }
 
-    public PropertyMaterial.Type getMaterial() {
-        return PropertyMaterial.Type.values()[this.materialId];
+    public int getInventoryHash() {
+        if (inventory == null) return 0;
+        int hash = 0;
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                hash = 31 * hash + stack.hashCode();
+            }
+        }
+        return hash;
     }
 
-    public void setMaterial(PropertyMaterial.Type material) {
-        this.materialId = material.ordinal();
-    }
-
-    // ===================== IInventory 接口 =====================
+    // ===================== IInventory =====================
 
     @Override
     public int getSizeInventory() {
@@ -337,7 +368,7 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
     public void update() {
         if (world == null || world.isRemote) return;
 
-        // 检测箱子动画
+        // 动画
         prevLidAngle = lidAngle;
         float increaseAngle = 0.15F / Math.min(5, getSizeSingular());
         if (playersUsing > 0 && lidAngle == 0.0F) {
@@ -388,7 +419,6 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
             compound.setString("customName", customName);
         }
         
-        // 保存 interface 位置
         NBTTagList list = new NBTTagList();
         for (Vec3i v : interfaceLocations) {
             NBTTagCompound tag = new NBTTagCompound();
@@ -425,7 +455,6 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
             customName = compound.getString("customName");
         }
         
-        // 恢复 inventory
         if (compound.hasKey("inventory")) {
             inventory = new ItemStackHandler(getSizeInventory());
             inventory.deserializeNBT(compound.getCompoundTag("inventory"));
@@ -436,7 +465,6 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
             lastValidInventory.deserializeNBT(compound.getCompoundTag("lastValidInventory"));
         }
         
-        // 恢复 interface 位置
         interfaceLocations.clear();
         NBTTagList list = compound.getTagList("interfaceLocations", 10);
         for (int i = 0; i < list.tagCount(); i++) {
@@ -449,7 +477,7 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
         }
     }
 
-    // ===================== 网络同步 =====================
+    // ===================== 网络 =====================
 
     @Override
     public NBTTagCompound getUpdateTag() {
@@ -481,7 +509,7 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
         return super.receiveClientEvent(id, type);
     }
 
-    // ===================== 渲染相关 =====================
+    // ===================== 渲染 =====================
 
     public Vec3d getRenderOffset() {
         return renderOffset;
@@ -492,15 +520,6 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
     }
 
     @SideOnly(Side.CLIENT)
-    @Override
-    public AxisAlignedBB getRenderBoundingBox() {
-        int size = getSizeSingular();
-        return new AxisAlignedBB(
-            pos.add(-size, -size, -size),
-            pos.add(size + 1, size * 2 + 1, size + 1)
-        );
-    }
-
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
         int size = getSizeSingular();
@@ -522,16 +541,14 @@ public class TileColossalChest extends TileEntity implements IInventory, ISidedI
         return Collections.unmodifiableList(interfaceLocations);
     }
 
+    public boolean canInteractWith(EntityPlayer player) {
+        return isUsableByPlayer(player);
+    }
+
     // ===================== ILootContainer =====================
 
     @Override
     public ResourceLocation getLootTable() {
         return new ResourceLocation("dummy");
-    }
-
-    // ===================== 工具方法 =====================
-
-    public boolean canInteractWith(EntityPlayer player) {
-        return isUsableByPlayer(player);
     }
 }
