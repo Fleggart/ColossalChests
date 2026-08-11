@@ -136,10 +136,15 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             int sizeY = maxY - minY + 1;
             int sizeZ = maxZ - minZ + 1;
             
+            // 获取最大尺寸配置
+            Vec3i maxSizeConfig = getMaxSize();
+            int maxSizeX = maxSizeConfig.getX() + 1;
+            int maxSizeY = maxSizeConfig.getY() + 1;
+            int maxSizeZ = maxSizeConfig.getZ() + 1;
+            
             // 检查是否是有效的巨型箱子（至少 2x2x2，且不超过最大尺寸）
-            Vec3i maxSize = getMaxSize();
             if (sizeX >= 2 && sizeY >= 2 && sizeZ >= 2 &&
-                sizeX <= maxSize.getX() + 1 && sizeY <= maxSize.getY() + 1 && sizeZ <= maxSize.getZ() + 1) {
+                sizeX <= maxSizeX && sizeY <= maxSizeY && sizeZ <= maxSizeZ) {
                 
                 Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
                 BlockPos origin = new BlockPos(minX, minY, minZ);
@@ -217,10 +222,10 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             
             // 结构无效，清理所有方块的状态（从中心点向外扩散）
             List<BlockPos> toClean = new ArrayList<>();
-            int maxSize = ColossalChestConfig.maxSize;
-            for (int dx = -maxSize; dx <= maxSize; dx++) {
-                for (int dy = -maxSize; dy <= maxSize; dy++) {
-                    for (int dz = -maxSize; dz <= maxSize; dz++) {
+            int maxSizeConfigInt = ColossalChestConfig.maxSize;
+            for (int dx = -maxSizeConfigInt; dx <= maxSizeConfigInt; dx++) {
+                for (int dy = -maxSizeConfigInt; dy <= maxSizeConfigInt; dy++) {
+                    for (int dz = -maxSizeConfigInt; dz <= maxSizeConfigInt; dz++) {
                         BlockPos checkPos = center.add(dx, dy, dz);
                         if (!world.isBlockLoaded(checkPos)) continue;
                         IBlockState checkState = world.getBlockState(checkPos);
@@ -755,5 +760,5 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     @Override
     public ResourceLocation getLootTable() {
         return new ResourceLocation("dummy");
-    }     
+    }
 }
