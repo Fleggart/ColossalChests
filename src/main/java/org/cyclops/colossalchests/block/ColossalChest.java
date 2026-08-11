@@ -157,28 +157,17 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
         if (state.getValue(ACTIVE)) {
-            // 获取核心 TileEntity
+            // ===== 关键修复：强制重置核心方块状态 =====
+            world.setBlockState(pos, state.withProperty(ACTIVE, false), 
+                    MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+            
+            // 清理 TileEntity 数据
             TileColossalChest tile = TileHelpers.getSafeTile(world, pos, TileColossalChest.class);
             if (tile != null) {
-                // 使用副本遍历，避免并发修改
-                List<Vec3i> interfaces = new ArrayList<>(tile.getInterfaceLocations());
-                for (Vec3i interfacePos : interfaces) {
-                    BlockPos targetPos = new BlockPos(interfacePos);
-                    IBlockState targetState = world.getBlockState(targetPos);
-                    Block targetBlock = targetState.getBlock();
-                    if (targetBlock instanceof ChestWall || 
-                        targetBlock instanceof Interface) {
-                        // 强制设为非活跃状态
-                        world.setBlockState(targetPos, targetState.withProperty(ACTIVE, false), 
-                                MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
-                    }
-                }
-                // 清理核心自身
-                world.setBlockState(pos, state.withProperty(ACTIVE, false), 
-                        MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
-                // 清空接口列表
                 tile.clearInterfaces();
+                tile.setSize(Vec3i.NULL_VECTOR);
             }
+            
             triggerDetector(world, pos, false, null);
         }
         super.breakBlock(world, pos, state);
