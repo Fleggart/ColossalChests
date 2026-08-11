@@ -1,10 +1,5 @@
 package org.cyclops.colossalchests.tileentity;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Range;
-import lombok.experimental.Delegate;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -14,8 +9,12 @@ import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ITickable;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -30,100 +29,50 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import org.apache.commons.lang3.ArrayUtils;
-import org.cyclops.colossalchests.Capabilities;
 import org.cyclops.colossalchests.ColossalChests;
 import org.cyclops.colossalchests.GeneralConfig;
-import org.cyclops.colossalchests.block.ChestWall;
-import org.cyclops.colossalchests.block.ColossalChest;
 import org.cyclops.colossalchests.block.ColossalChestConfig;
-import org.cyclops.colossalchests.block.Interface;
 import org.cyclops.colossalchests.block.PropertyMaterial;
-import org.cyclops.colossalchests.inventory.LegacyIndexedInventory;
-import org.cyclops.colossalchests.inventory.LegacyLargeInventory;
-import org.cyclops.colossalchests.inventory.LegacySimpleInventory;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
-import org.cyclops.cyclopscore.block.multi.AllowedBlock;
-import org.cyclops.cyclopscore.block.multi.CubeDetector;
-import org.cyclops.cyclopscore.block.multi.CubeSizeValidator;
-import org.cyclops.cyclopscore.block.multi.ExactBlockCountValidator;
-import org.cyclops.cyclopscore.block.multi.HollowCubeDetector;
-import org.cyclops.cyclopscore.block.multi.MaximumSizeValidator;
-import org.cyclops.cyclopscore.block.multi.MinimumSizeValidator;
-import org.cyclops.cyclopscore.datastructure.EnumFacingMap;
-import org.cyclops.cyclopscore.helper.DirectionHelpers;
-import org.cyclops.cyclopscore.helper.L10NHelpers;
-import org.cyclops.cyclopscore.helper.LocationHelpers;
-import org.cyclops.cyclopscore.helper.MinecraftHelpers;
-import org.cyclops.cyclopscore.helper.WorldHelpers;
-import org.cyclops.cyclopscore.persist.nbt.NBTPersist;
-import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import javax.annotation.Nullable;
+import java.util.*;
 
-public class TileColossalChest extends CyclopsTileEntity implements IInventory, CyclopsTileEntity.ITickingTile, ILootContainer {
+public class TileColossalChest extends TileEntity implements IInventory, ISidedInventory, ITickable, ILootContainer {
 
     private static final int TICK_MODULUS = 200;
+    private static final int DEFAULT_SIZE = 0;
 
-    @SuppressWarnings("unchecked")
-    public static CubeDetector detector = new HollowCubeDetector(
-            new AllowedBlock[]{
-                    new AllowedBlock(ChestWall.getInstance()),
-                    new AllowedBlock(ColossalChest.getInstance()).addCountValidator(new ExactBlockCountValidator(1)),
-                    new AllowedBlock(Interface.getInstance())
-            },
-            Lists.newArrayList(ColossalChest.getInstance(), ChestWall.getInstance(), Interface.getInstance())
-    )
-            .addSizeValidator(new MinimumSizeValidator(new Vec3i(1, 1, 1)))
-            .addSizeValidator(new CubeSizeValidator())
-            .addSizeValidator(new MaximumSizeValidator(getMaxSize()) {
-                @Override
-                public Vec3i getMaximumSize() {
-                    return getMaxSize();
-                }
-            });
+    // 物品栏 - 使用 Forge 的 ItemStackHandler
+    private ItemStackHandler inventory;
+    private ItemStackHandler lastValidInventory;
 
-    @Delegate
-    private final ITickingTile tickingTileComponent = new TickingTileComponent(this);
-
-    @NBTPersist
-    private LegacySimpleInventory lastValidInventory = null;
-    private LegacySimpleInventory inventory = null;
-
-    @NBTPersist
-    private Vec3i size = LocationHelpers.copyLocation(Vec3i.NULL_VECTOR);
-    @NBTPersist
+    // 结构数据
+    private Vec3i size = Vec3i.NULL_VECTOR;
     private Vec3d renderOffset = new Vec3d(0, 0, 0);
-    @NBTPersist
     private String customName = null;
-    @NBTPersist
     private int materialId = 0;
-    @NBTPersist
-    private int _modVersion = 0;
-    @NBTPersist(useDefaultValue = false)
-    private List<Vec3i> interfaceLocations = Lists.newArrayList();
-    private static final int _MOD_VERSION = 1;
+    private int modVersion = 0;
+    private List<Vec3i> interfaceLocations = new ArrayList<>();
+    private static final int MOD_VERSION = 1;
 
+    // 箱子动画
     public float prevLidAngle;
     public float lidAngle;
     private int playersUsing;
-    private boolean recreateNullInventory = true;
 
-    private Block block = ColossalChest.getInstance();
-    private EnumFacingMap<int[]> facingSlots = EnumFacingMap.newMap();
+    private Block block;
+    private Map<EnumFacing, int[]> facingSlots = new HashMap<>();
 
     public TileColossalChest() {
-        if (Capabilities.SLOTLESS_ITEMHANDLER != null) {
-            addSlotlessItemHandlerCapability();
-        }
+        this.inventory = new ItemStackHandler(0);
+        this.block = ColossalChest.getInstance();
     }
 
-    protected void addSlotlessItemHandlerCapability() {
-        // Temporarily disabled due to API changes
-    }
-
+    // ===================== 结构检测相关 =====================
+    
     public Vec3i getSize() {
         return size;
     }
@@ -131,305 +80,217 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public void setSize(Vec3i size) {
         this.size = size;
         facingSlots.clear();
-        if(isStructureComplete()) {
-            this._modVersion = _MOD_VERSION;
+        if (isStructureComplete()) {
+            this.modVersion = MOD_VERSION;
             this.inventory = constructInventory();
 
-            if(this.lastValidInventory != null) {
+            if (this.lastValidInventory != null) {
                 int slot = 0;
-                while(slot < Math.min(this.lastValidInventory.getSizeInventory(), this.inventory.getSizeInventory())) {
+                while (slot < Math.min(this.lastValidInventory.getSlots(), this.inventory.getSlots())) {
                     ItemStack contents = this.lastValidInventory.getStackInSlot(slot);
                     if (!contents.isEmpty()) {
-                        this.inventory.setInventorySlotContents(slot, contents);
-                        this.lastValidInventory.setInventorySlotContents(slot, ItemStack.EMPTY);
+                        this.inventory.setStackInSlot(slot, contents);
+                        this.lastValidInventory.setStackInSlot(slot, ItemStack.EMPTY);
                     }
                     slot++;
                 }
-                if(slot < this.lastValidInventory.getSizeInventory()) {
-                    MinecraftHelpers.dropItems(getWorld(), this.lastValidInventory, getPos());
+                if (slot < this.lastValidInventory.getSlots()) {
+                    dropItems(this.lastValidInventory);
                 }
                 this.lastValidInventory = null;
             }
         } else {
             interfaceLocations.clear();
-            if(this.inventory != null) {
-                if(GeneralConfig.ejectItemsOnDestroy) {
-                    MinecraftHelpers.dropItems(getWorld(), this.inventory, getPos());
+            if (this.inventory != null) {
+                if (GeneralConfig.ejectItemsOnDestroy) {
+                    dropItems(this.inventory);
                     this.lastValidInventory = null;
                 } else {
                     this.lastValidInventory = this.inventory;
                 }
             }
-            this.inventory = new LegacyLargeInventory(0, "invalid", 0);
+            this.inventory = new ItemStackHandler(0);
         }
+        markDirty();
         sendUpdate();
     }
 
-    public void setMaterial(PropertyMaterial.Type material) {
-        this.materialId = material.ordinal();
+    private void dropItems(ItemStackHandler inv) {
+        World world = getWorld();
+        if (world == null || world.isRemote) return;
+        for (int i = 0; i < inv.getSlots(); i++) {
+            ItemStack stack = inv.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                net.minecraft.entity.item.EntityItem item = new net.minecraft.entity.item.EntityItem(
+                        world, getPos().getX(), getPos().getY(), getPos().getZ(), stack);
+                world.spawnEntity(item);
+            }
+        }
+    }
+
+    public boolean isStructureComplete() {
+        return !size.equals(Vec3i.NULL_VECTOR);
+    }
+
+    public static Vec3i getMaxSize() {
+        int size = ColossalChestConfig.maxSize;
+        return new Vec3i(size, size, size);
+    }
+
+    // ===================== 物品栏管理 =====================
+
+    private ItemStackHandler constructInventory() {
+        int size = calculateInventorySize();
+        if (GeneralConfig.creativeChests && !getWorld().isRemote) {
+            ItemStackHandler inv = new ItemStackHandler(size);
+            Random random = new Random();
+            for (int i = 0; i < size; i++) {
+                inv.setStackInSlot(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
+            }
+            return inv;
+        }
+        return new ItemStackHandler(size);
+    }
+
+    private int calculateInventorySize() {
+        int size = getSizeSingular();
+        if (size == 1) return 0;
+        return (int) Math.ceil((Math.pow(size, 3) * 27) * getMaterial().getInventoryMultiplier() / 9) * 9;
+    }
+
+    public int getSizeSingular() {
+        return size.getX() + 1;
     }
 
     public PropertyMaterial.Type getMaterial() {
         return PropertyMaterial.Type.values()[this.materialId];
     }
 
-    public int getSizeSingular() {
-        return getSize().getX() + 1;
+    public void setMaterial(PropertyMaterial.Type material) {
+        this.materialId = material.ordinal();
     }
 
-    protected boolean isClientSide() {
-        return getWorld() != null && getWorld().isRemote;
-    }
+    // ===================== IInventory 接口 =====================
 
-    protected LegacySimpleInventory constructInventory() {
-        if (!isClientSide() && GeneralConfig.creativeChests) {
-            return constructInventoryDebug();
-        }
-        return !isClientSide() ? new LegacyIndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
-                : new LegacyLargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
-    }
-
-    protected LegacySimpleInventory constructInventoryDebug() {
-        LegacySimpleInventory inv = !isClientSide() ? new LegacyIndexedInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64)
-                : new LegacyLargeInventory(calculateInventorySize(), ColossalChestConfig._instance.getNamedId(), 64);
-        Random random = new Random();
-        for (int i = 0; i < inv.getSizeInventory(); i++) {
-            inv.setInventorySlotContents(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
-        }
-        return inv;
-    }
-
-    @Override
-    public NBTTagCompound getUpdateTag() {
-        LegacySimpleInventory oldInventory = this.inventory;
-        LegacySimpleInventory oldLastInventory = this.lastValidInventory;
-        this.inventory = null;
-        this.lastValidInventory = null;
-        this.recreateNullInventory = false;
-        NBTTagCompound tag = super.getUpdateTag();
-        this.inventory = oldInventory;
-        this.lastValidInventory = oldLastInventory;
-        this.recreateNullInventory = true;
-        return tag;
-    }
-
-    @Override
-    public void readFromNBT(NBTTagCompound tag) {
-        LegacySimpleInventory oldInventory = this.inventory;
-        LegacySimpleInventory oldLastInventory = this.lastValidInventory;
-
-        if (getWorld() != null && getWorld().isRemote) {
-            this.inventory = null;
-            this.lastValidInventory = null;
-            this.recreateNullInventory = false;
-        }
-        super.readFromNBT(tag);
-        if (getWorld() != null && getWorld().isRemote) {
-            this.inventory = oldInventory;
-            this.lastValidInventory = oldLastInventory;
-            this.recreateNullInventory = true;
-        }
-    }
-
-    @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(getPos(), 1, getUpdateTag());
-    }
-
-    protected int calculateInventorySize() {
-        int size = getSizeSingular();
-        if (size == 1) {
-            return 0;
-        }
-        return (int) Math.ceil((Math.pow(size, 3) * 27) * getMaterial().getInventoryMultiplier() / 9) * 9;
-    }
-
-    @Override
-    public void updateTileEntity() {
-        super.updateTileEntity();
-
-        if(world != null) {
-            if(this._modVersion != _MOD_VERSION && this.isStructureComplete()) {
-                ColossalChests.clog("Upgrading colossal chest from old mod version at " + getPos());
-                TileColossalChest.detector.detect(getWorld(), getPos(), null, new CubeDetector.IValidationAction() {
-                    @Override
-                    public L10NHelpers.UnlocalizedString onValidate(BlockPos location, IBlockState blockState) {
-                        getWorld().setBlockState(location, blockState.
-                                withProperty(ColossalChest.ACTIVE, true).
-                                withProperty(ColossalChest.MATERIAL, PropertyMaterial.Type.WOOD));
-                        return null;
-                    }
-                }, false);
-                this._modVersion = _MOD_VERSION;
-            }
-        }
-
-        if(world != null
-                && !this.world.isRemote
-                && this.playersUsing != 0
-                && WorldHelpers.efficientTick(world, TICK_MODULUS, getPos().hashCode())) {
-            this.playersUsing = 0;
-            float range = 5.0F;
-            @SuppressWarnings("unchecked")
-            List<EntityPlayer> entities = this.world.getEntitiesWithinAABB(
-                    EntityPlayer.class,
-                    new AxisAlignedBB(
-                            getPos().add(new Vec3i(-range, -range, -range)),
-                            getPos().add(new Vec3i(1 + range, 1 + range, 1 + range))
-                    )
-            );
-
-            for(EntityPlayer player : entities) {
-                if (player.openContainer instanceof ContainerColossalChest) {
-                    ++this.playersUsing;
-                }
-            }
-
-            world.addBlockEvent(getPos(), block, 1, playersUsing);
-        }
-
-        prevLidAngle = lidAngle;
-        float increaseAngle = 0.15F / Math.min(5, getSizeSingular());
-        if (playersUsing > 0 && lidAngle == 0.0F) {
-            world.playSound(
-                    (double) getPos().getX() + 0.5D,
-                    (double) getPos().getY() + 0.5D,
-                    (double) getPos().getZ() + 0.5D,
-                    SoundEvents.BLOCK_CHEST_OPEN,
-                    SoundCategory.BLOCKS,
-                    (float) (0.5F + (0.5F * Math.log(getSizeSingular()))),
-                    world.rand.nextFloat() * 0.1F + 0.45F + increaseAngle,
-                    true
-            );
-        }
-        if (playersUsing == 0 && lidAngle > 0.0F || playersUsing > 0 && lidAngle < 1.0F) {
-            float preIncreaseAngle = lidAngle;
-            if (playersUsing > 0) {
-                lidAngle += increaseAngle;
-            } else {
-                lidAngle -= increaseAngle;
-            }
-            if (lidAngle > 1.0F) {
-                lidAngle = 1.0F;
-            }
-            float closedAngle = 0.5F;
-            if (lidAngle < closedAngle && preIncreaseAngle >= closedAngle) {
-                world.playSound(
-                        (double) getPos().getX() + 0.5D,
-                        (double) getPos().getY() + 0.5D,
-                        (double) getPos().getZ() + 0.5D,
-                        SoundEvents.BLOCK_CHEST_CLOSE,
-                        SoundCategory.BLOCKS,
-                        (float) (0.5F + (0.5F * Math.log(getSizeSingular()))),
-                        world.rand.nextFloat() * 0.05F + 0.45F + increaseAngle,
-                        true
-                );
-            }
-            if (lidAngle < 0.0F) {
-                lidAngle = 0.0F;
-            }
-        }
-    }
-
-    @Override
-    public boolean receiveClientEvent(int i, int j) {
-        if (i == 1) {
-            playersUsing = j;
-        }
-        return true;
-    }
-
-    // ===================== IInventory 接口全部实现 =====================
     @Override
     public int getSizeInventory() {
-        return getInventory().getSizeInventory();
+        return inventory != null ? inventory.getSlots() : 0;
     }
 
     @Override
     public boolean isEmpty() {
-        return getInventory().isEmpty();
+        if (inventory == null) return true;
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            if (!inventory.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        return getInventory().getStackInSlot(index);
+        return inventory != null && index < inventory.getSlots() ? inventory.getStackInSlot(index) : ItemStack.EMPTY;
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        return getInventory().decrStackSize(index, count);
+        if (inventory == null || index >= inventory.getSlots()) return ItemStack.EMPTY;
+        ItemStack stack = inventory.getStackInSlot(index);
+        if (stack.isEmpty()) return ItemStack.EMPTY;
+        ItemStack result = stack.splitStack(count);
+        if (stack.isEmpty()) {
+            inventory.setStackInSlot(index, ItemStack.EMPTY);
+        }
+        markDirty();
+        return result;
     }
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        return getInventory().removeStackFromSlot(index);
+        if (inventory == null || index >= inventory.getSlots()) return ItemStack.EMPTY;
+        ItemStack stack = inventory.getStackInSlot(index);
+        inventory.setStackInSlot(index, ItemStack.EMPTY);
+        markDirty();
+        return stack;
     }
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-        getInventory().setInventorySlotContents(index, stack);
+        if (inventory == null || index >= inventory.getSlots()) return;
+        inventory.setStackInSlot(index, stack);
+        markDirty();
     }
 
     @Override
     public int getInventoryStackLimit() {
-        return getInventory().getInventoryStackLimit();
+        return 64;
     }
 
     @Override
     public void markDirty() {
-        getInventory().markDirty();
+        super.markDirty();
     }
 
     @Override
     public boolean isUsableByPlayer(EntityPlayer player) {
-        return getInventory().isUsableByPlayer(player);
+        return world.getTileEntity(pos) == this && player.getDistanceSq(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64;
     }
 
     @Override
     public void openInventory(EntityPlayer player) {
         if (!player.isSpectator()) {
-            getInventory().openInventory(player);
-            triggerPlayerUsageChange(1);
+            playersUsing++;
+            world.addBlockEvent(pos, block, 1, playersUsing);
         }
     }
 
     @Override
     public void closeInventory(EntityPlayer player) {
         if (!player.isSpectator()) {
-            getInventory().closeInventory(player);
-            triggerPlayerUsageChange(-1);
+            playersUsing--;
+            world.addBlockEvent(pos, block, 1, playersUsing);
         }
     }
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return getInventory().isItemValidForSlot(index, stack);
+        return true;
     }
 
     @Override
     public int getField(int id) {
-        return getInventory().getField(id);
+        return 0;
     }
 
     @Override
-    public void setField(int id, int value) {
-        getInventory().setField(id, value);
-    }
+    public void setField(int id, int value) {}
 
     @Override
     public int getFieldCount() {
-        return getInventory().getFieldCount();
+        return 0;
     }
 
     @Override
     public void clear() {
-        getInventory().clear();
+        if (inventory != null) {
+            for (int i = 0; i < inventory.getSlots(); i++) {
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
+        markDirty();
     }
+
+    // ===================== IWorldNameable =====================
 
     @Override
     public String getName() {
-        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.colossalchest.name",
-                getMaterial().getLocalizedName(), getSizeSingular());
+        return hasCustomName() ? customName : 
+            net.minecraft.util.text.translation.I18n.translateToLocalFormatted(
+                "general.colossalchests.colossalchest.name", 
+                getMaterial().getLocalizedName(), 
+                getSizeSingular()
+            );
     }
 
     @Override
@@ -441,79 +302,23 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public ITextComponent getDisplayName() {
         return new TextComponentString(getName());
     }
-    // ===================== IInventory 接口结束 =====================
 
-    private void triggerPlayerUsageChange(int change) {
-        if (world != null) {
-            playersUsing += change;
-            world.addBlockEvent(getPos(), block, 1, playersUsing);
-        }
+    public void setCustomName(String name) {
+        this.customName = name;
     }
 
-    public LegacySimpleInventory getInventory() {
-        if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSizeInventory() != calculateInventorySize())) {
-            return inventory = constructInventory();
-        }
-        if(lastValidInventory != null) {
-            return new LegacyIndexedInventory();
-        }
-        if(inventory == null && this.recreateNullInventory) {
-            inventory = constructInventory();
-        }
-        return inventory;
-    }
-
-    public boolean canInteractWith(EntityPlayer entityPlayer) {
-        return getSizeSingular() > 1;
-    }
-
-    @Override
-    @SideOnly(Side.CLIENT)
-    public AxisAlignedBB getRenderBoundingBox() {
-        int size = getSizeSingular();
-        return new AxisAlignedBB(getPos().subtract(new Vec3i(size, size, size)), getPos().add(size, size * 2, size));
-    }
-
-    public void setCenter(Vec3d center) {
-        EnumFacing rotation;
-        double dx = Math.abs(center.x - getPos().getX());
-        double dz = Math.abs(center.z - getPos().getZ());
-        boolean equal = (center.x - getPos().getX()) == (center.z - getPos().getZ());
-        if(dx > dz || (!equal && getSizeSingular() == 2)) {
-            rotation = DirectionHelpers.getEnumFacingFromXSign((int) Math.round(center.x - getPos().getX()));
-        } else {
-            rotation = DirectionHelpers.getEnumFacingFromZSing((int) Math.round(center.z - getPos().getZ()));
-        }
-        this.setRotation(rotation);
-        this.renderOffset = new Vec3d(getPos().getX() - center.x, getPos().getY() - center.y, getPos().getZ() - center.z);
-    }
-
-    public Vec3d getRenderOffset() {
-        return this.renderOffset;
-    }
-
-    public static void detectStructure(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
-    }
+    // ===================== ISidedInventory =====================
 
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
-        if (side == null) {
-            side = EnumFacing.UP;
-        }
+        int size = getSizeInventory();
         int[] slots = facingSlots.get(side);
-        if(slots == null) {
-            ContiguousSet<Integer> integers = ContiguousSet.create(
-                    Range.closedOpen(0, getSizeInventory()), DiscreteDomain.integers()
-            );
-            slots = ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
+        if (slots == null) {
+            slots = new int[size];
+            for (int i = 0; i < size; i++) slots[i] = i;
             facingSlots.put(side, slots);
         }
         return slots;
-    }
-
-    @Override
-    public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
-        return true;
     }
 
     @Override
@@ -521,29 +326,212 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return true;
     }
 
-    public boolean isStructureComplete() {
-        return !getSize().equals(Vec3i.NULL_VECTOR);
+    @Override
+    public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
+        return true;
     }
 
-    public static Vec3i getMaxSize() {
-        int size = ColossalChestConfig.maxSize;
-        return new Vec3i(size, size, size);
+    // ===================== ITickable =====================
+
+    @Override
+    public void update() {
+        if (world == null || world.isRemote) return;
+
+        // 检测箱子动画
+        prevLidAngle = lidAngle;
+        float increaseAngle = 0.15F / Math.min(5, getSizeSingular());
+        if (playersUsing > 0 && lidAngle == 0.0F) {
+            world.playSound(
+                pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
+                SoundEvents.BLOCK_CHEST_OPEN,
+                SoundCategory.BLOCKS,
+                (float) (0.5F + (0.5F * Math.log(getSizeSingular()))),
+                world.rand.nextFloat() * 0.1F + 0.45F + increaseAngle,
+                true
+            );
+        }
+        if (playersUsing == 0 && lidAngle > 0.0F || playersUsing > 0 && lidAngle < 1.0F) {
+            float preIncreaseAngle = lidAngle;
+            if (playersUsing > 0) {
+                lidAngle += increaseAngle;
+            } else {
+                lidAngle -= increaseAngle;
+            }
+            if (lidAngle > 1.0F) lidAngle = 1.0F;
+            if (lidAngle < 0.0F) lidAngle = 0.0F;
+        }
     }
 
-    public void setCustomName(String name) {
-        this.customName = name;
+    // ===================== NBT =====================
+
+    @Override
+    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+        super.writeToNBT(compound);
+        
+        if (inventory != null) {
+            compound.setTag("inventory", inventory.serializeNBT());
+        }
+        if (lastValidInventory != null) {
+            compound.setTag("lastValidInventory", lastValidInventory.serializeNBT());
+        }
+        
+        compound.setInteger("sizeX", size.getX());
+        compound.setInteger("sizeY", size.getY());
+        compound.setInteger("sizeZ", size.getZ());
+        compound.setDouble("renderOffsetX", renderOffset.x);
+        compound.setDouble("renderOffsetY", renderOffset.y);
+        compound.setDouble("renderOffsetZ", renderOffset.z);
+        compound.setInteger("materialId", materialId);
+        compound.setInteger("modVersion", modVersion);
+        
+        if (customName != null) {
+            compound.setString("customName", customName);
+        }
+        
+        // 保存 interface 位置
+        NBTTagList list = new NBTTagList();
+        for (Vec3i v : interfaceLocations) {
+            NBTTagCompound tag = new NBTTagCompound();
+            tag.setInteger("x", v.getX());
+            tag.setInteger("y", v.getY());
+            tag.setInteger("z", v.getZ());
+            list.appendTag(tag);
+        }
+        compound.setTag("interfaceLocations", list);
+        
+        return compound;
     }
 
-    public void addInterface(Vec3i blockPos) {
-        interfaceLocations.add(blockPos);
+    @Override
+    public void readFromNBT(NBTTagCompound compound) {
+        super.readFromNBT(compound);
+        
+        size = new Vec3i(
+            compound.getInteger("sizeX"),
+            compound.getInteger("sizeY"),
+            compound.getInteger("sizeZ")
+        );
+        
+        renderOffset = new Vec3d(
+            compound.getDouble("renderOffsetX"),
+            compound.getDouble("renderOffsetY"),
+            compound.getDouble("renderOffsetZ")
+        );
+        
+        materialId = compound.getInteger("materialId");
+        modVersion = compound.getInteger("modVersion");
+        
+        if (compound.hasKey("customName")) {
+            customName = compound.getString("customName");
+        }
+        
+        // 恢复 inventory
+        if (compound.hasKey("inventory")) {
+            inventory = new ItemStackHandler(getSizeInventory());
+            inventory.deserializeNBT(compound.getCompoundTag("inventory"));
+        }
+        
+        if (compound.hasKey("lastValidInventory")) {
+            lastValidInventory = new ItemStackHandler(0);
+            lastValidInventory.deserializeNBT(compound.getCompoundTag("lastValidInventory"));
+        }
+        
+        // 恢复 interface 位置
+        interfaceLocations.clear();
+        NBTTagList list = compound.getTagList("interfaceLocations", 10);
+        for (int i = 0; i < list.tagCount(); i++) {
+            NBTTagCompound tag = list.getCompoundTagAt(i);
+            interfaceLocations.add(new Vec3i(
+                tag.getInteger("x"),
+                tag.getInteger("y"),
+                tag.getInteger("z")
+            ));
+        }
+    }
+
+    // ===================== 网络同步 =====================
+
+    @Override
+    public NBTTagCompound getUpdateTag() {
+        return writeToNBT(new NBTTagCompound());
+    }
+
+    @Override
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        return new SPacketUpdateTileEntity(pos, 1, getUpdateTag());
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
+        readFromNBT(pkt.getNbtCompound());
+    }
+
+    private void sendUpdate() {
+        if (world != null && !world.isRemote) {
+            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
+        }
+    }
+
+    @Override
+    public boolean receiveClientEvent(int id, int type) {
+        if (id == 1) {
+            playersUsing = type;
+            return true;
+        }
+        return super.receiveClientEvent(id, type);
+    }
+
+    // ===================== 渲染相关 =====================
+
+    public Vec3d getRenderOffset() {
+        return renderOffset;
+    }
+
+    public void setCenter(Vec3d center) {
+        this.renderOffset = new Vec3d(pos.getX() - center.x, pos.getY() - center.y, pos.getZ() - center.z);
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {
+        int size = getSizeSingular();
+        return new AxisAlignedBB(
+            pos.add(-size, -size, -size),
+            pos.add(size + 1, size * 2 + 1, size + 1)
+        );
+    }
+
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {
+        int size = getSizeSingular();
+        return new AxisAlignedBB(
+            pos.add(-size, -size, -size),
+            pos.add(size + 1, size * 2 + 1, size + 1)
+        );
+    }
+
+    // ===================== 接口管理 =====================
+
+    public void addInterface(Vec3i location) {
+        if (!interfaceLocations.contains(location)) {
+            interfaceLocations.add(location);
+        }
     }
 
     public List<Vec3i> getInterfaceLocations() {
         return Collections.unmodifiableList(interfaceLocations);
     }
 
+    // ===================== ILootContainer =====================
+
     @Override
     public ResourceLocation getLootTable() {
         return new ResourceLocation("dummy");
+    }
+
+    // ===================== 工具方法 =====================
+
+    public boolean canInteractWith(EntityPlayer player) {
+        return isUsableByPlayer(player);
     }
 }
