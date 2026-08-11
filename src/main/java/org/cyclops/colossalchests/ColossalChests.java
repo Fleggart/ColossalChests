@@ -37,7 +37,7 @@ import java.util.Set;
         name = Reference.MOD_NAME,
         useMetadata = true,
         version = Reference.MOD_VERSION,
-        dependencies = Reference.MOD_DEPENDENCIES,
+        dependencies = "required-after:forge@[14.23.5.2768,);required-after:cyclopscore@[1.3.0,);after:commoncapabilities@[2.4.0,);",
         guiFactory = "org.cyclops.colossalchests.GuiConfigOverview$ExtendedConfigGuiFactory",
         certificateFingerprint = Reference.MOD_FINGERPRINT
 )
