@@ -15,7 +15,7 @@ import org.cyclops.colossalchests.tileentity.TileColossalChest;
 import org.cyclops.cyclopscore.client.gui.component.button.GuiButtonArrow;
 import org.cyclops.cyclopscore.client.gui.container.ScrollingGuiContainer;
 import org.cyclops.cyclopscore.init.ModBase;
-
+import net.minecraft.util.ResourceLocation;
 import java.io.IOException;
 
 /**
@@ -98,11 +98,10 @@ public class GuiColossalChest extends ScrollingGuiContainer {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        // Draw background texture
         this.drawDefaultBackground();
         int i = (this.width - this.xSize) / 2;
         int j = (this.height - this.ySize) / 2;
-        this.mc.getTextureManager().bindTexture(getGuiTexture());
+        this.mc.getTextureManager().bindTexture(new ResourceLocation(getGuiTexture()));
         this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
     }
 
