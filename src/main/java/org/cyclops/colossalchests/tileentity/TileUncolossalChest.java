@@ -39,8 +39,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @NBTPersist
     private String customName = null;
 
-    // 覆盖父类的 inventory，使用我们自己的 LegacySimpleInventory
-    @NBTPersist
+    // 移除 @NBTPersist，改为手动序列化
     private LegacySimpleInventory customInventory;
 
     public float prevLidAngle;
@@ -223,8 +222,8 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     public void clear() {
         for (int i = 0; i < customInventory.getSizeInventory(); i++) {
             customInventory.setInventorySlotContents(i, ItemStack.EMPTY);
+        }
     }
-}
 
     @Override
     public String getName() {
@@ -241,11 +240,13 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         return new TextComponentString(getName());
     }
 
-    // ===================== 覆盖父类的 NBT 方法 =====================
+    // ===================== 覆盖父类的 NBT 方法（手动序列化） =====================
     @Override
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
+        // 手动恢复 customInventory
         if (tag.hasKey("customInventory")) {
+            customInventory = new LegacySimpleInventory(5, "uncolossalChest", 64);
             customInventory.readFromNBT(tag.getCompoundTag("customInventory"));
         }
     }
@@ -253,9 +254,12 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound tag) {
         tag = super.writeToNBT(tag);
-        NBTTagCompound invTag = new NBTTagCompound();
-        customInventory.writeToNBT(invTag);
-        tag.setTag("customInventory", invTag);
+        // 手动保存 customInventory
+        if (customInventory != null) {
+            NBTTagCompound invTag = new NBTTagCompound();
+            customInventory.writeToNBT(invTag);
+            tag.setTag("customInventory", invTag);
+        }
         return tag;
     }
 
