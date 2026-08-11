@@ -110,14 +110,6 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
         if (state.getValue(ACTIVE)) {
-            // 从核心 TileEntity 的接口列表中移除自己
-            BlockPos corePos = ColossalChest.getCoreLocation(world, pos);
-            if (corePos != null) {
-                TileColossalChest core = TileHelpers.getSafeTile(world, corePos, TileColossalChest.class);
-                if (core != null) {
-                    core.removeInterface(pos);
-                }
-            }
             ColossalChest.triggerDetector(world, pos, false, null);
         }
         super.breakBlock(world, pos, state);
@@ -131,17 +123,27 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
     @Override
     public void onDetect(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
         Block block = world.getBlockState(location).getBlock();
-        if(block == this) {
-            boolean change = !(Boolean) world.getBlockState(location).getValue(ACTIVE);
-            world.setBlockState(location, world.getBlockState(location).withProperty(ACTIVE, valid), MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
-            if(change) {
+        if (block == this) {
+            IBlockState currentState = world.getBlockState(location);
+            boolean currentActive = currentState.getValue(ACTIVE);
+            IBlockState newState = currentState.withProperty(ACTIVE, valid);
+            
+            // 使用 Flag = 3（BLOCK_NOTIFY_ALL），强制同步客户端并重新渲染
+            world.setBlockState(location, newState, 3);
+            world.notifyBlockUpdate(location, currentState, newState, 3);
+            
+            if (currentActive != valid) {
                 BlockPos tileLocation = ColossalChest.getCoreLocation(world, location);
                 TileInterface tile = TileHelpers.getSafeTile(world, location, TileInterface.class);
-                if(tile != null && tileLocation != null) {
+                if (tile != null && tileLocation != null) {
                     tile.setCorePosition(tileLocation);
                     TileColossalChest core = TileHelpers.getSafeTile(world, tileLocation, TileColossalChest.class);
                     if (core != null) {
-                        core.addInterface(location);
+                        if (valid) {
+                            core.addInterface(location);
+                        } else {
+                            core.removeInterface(location);
+                        }
                     }
                 }
             }
@@ -189,7 +191,9 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
 
     @Override
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
-        return super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta * 2, placer, hand);
+        // 强制返回非活跃状态
+        IBlockState state = super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer, hand);
+        return state.withProperty(ACTIVE, false);
     }
 
     @Override
