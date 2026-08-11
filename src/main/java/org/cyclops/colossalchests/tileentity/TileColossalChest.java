@@ -304,12 +304,12 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     @Override
     public void clear() {
         if (inventory != null) {
-            for (int i = 0; i < inventory.getSlots(); i++) {
-                inventory.setStackInSlot(i, ItemStack.EMPTY);
-            }
+           for (int i = 0; i < inventory.getSlots(); i++) {
+               inventory.setStackInSlot(i, ItemStack.EMPTY);
         }
-        markDirty();
     }
+    markDirty();
+}
 
     // ===================== IWorldNameable =====================
 
