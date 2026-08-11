@@ -221,8 +221,10 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
 
     @Override
     public void clear() {
-        customInventory.clear();
+        for (int i = 0; i < customInventory.getSizeInventory(); i++) {
+            customInventory.setInventorySlotContents(i, ItemStack.EMPTY);
     }
+}
 
     @Override
     public String getName() {
