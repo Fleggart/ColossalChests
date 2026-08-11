@@ -13,6 +13,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.*;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.network.play.server.SPacketSetSlot;
+import net.minecraftforge.items.ItemStackHandler;
 import org.cyclops.colossalchests.ColossalChests;
 import org.cyclops.colossalchests.GeneralConfig;
 import org.cyclops.colossalchests.block.ColossalChest;
@@ -60,11 +61,12 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         updateFilter("");
 
         if (tile.getWorld().isRemote) {
-           ItemStackHandler inv = tile.getInventory();
-           for (int i = 0; i < inv.getSlots(); i++) {
-               inv.setStackInSlot(i, ItemStack.EMPTY);
-           }
-     }
+            ItemStackHandler inv = tile.getInventory();
+            for (int i = 0; i < inv.getSlots(); i++) {
+                inv.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
+    }
 
     @SuppressWarnings("unchecked")
     @Override
