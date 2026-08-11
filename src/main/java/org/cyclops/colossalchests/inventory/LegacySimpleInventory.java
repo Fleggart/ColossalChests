@@ -7,9 +7,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.items.ItemStackHandler;
-import org.cyclops.cyclopscore.inventory.INBTInventory;
 
-public class LegacySimpleInventory implements IInventory, INBTInventory {
+public class LegacySimpleInventory implements IInventory {
 
     private ItemStackHandler handler;
     private String name;
@@ -131,24 +130,22 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         return new TextComponentString(getName());
     }
 
-    // ===== INBTInventory 接口方法 =====
-    @Override
-    public NBTTagCompound toNBT() {
-        return handler.serializeNBT();
-    }
-
-    @Override
-    public void fromNBT(NBTTagCompound nbt) {
-        handler.deserializeNBT(nbt);
-    }
-
-    // ===== Convenience methods =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
     }
 
     public void deserializeNBT(NBTTagCompound nbt) {
         handler.deserializeNBT(nbt);
+    }
+
+    public void writeToNBT(NBTTagCompound nbt) {
+        nbt.setTag("inventory", handler.serializeNBT());
+    }
+
+    public void readFromNBT(NBTTagCompound nbt) {
+        if (nbt.hasKey("inventory")) {
+            handler.deserializeNBT(nbt.getCompoundTag("inventory"));
+        }
     }
 
     public int getSlots() {
