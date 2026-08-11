@@ -2,10 +2,6 @@ package org.cyclops.colossalchests.client.gui.container;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ClickType;
@@ -19,7 +15,6 @@ import org.cyclops.colossalchests.network.packet.ClickWindowPacketOverride;
 import org.cyclops.colossalchests.tileentity.TileColossalChest;
 import org.cyclops.cyclopscore.client.gui.component.button.GuiButtonArrow;
 import org.cyclops.cyclopscore.client.gui.container.ScrollingGuiContainer;
-import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 
@@ -28,6 +23,7 @@ public class GuiColossalChest extends ScrollingGuiContainer {
     private static final int TEXTUREWIDTH = 195;
     private static final int TEXTUREHEIGHT = 194;
 
+    // GUI 纹理
     private static final ResourceLocation GUI_TEXTURE = 
             new ResourceLocation("colossalchests", "textures/gui/colossal_chest.png");
 
@@ -102,40 +98,43 @@ public class GuiColossalChest extends ScrollingGuiContainer {
         this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
         this.drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
 
-        // 2. 绘制红色滑块（调试用）
-        drawDebugScrollBar();
+        // 2. 绘制滑块（从纹理中截取）
+        drawSliderFromTexture();
     }
 
-    private void drawDebugScrollBar() {
+    /**
+     * 从主纹理中截取滑块图案
+     * 滑块位置：纹理坐标 (196, 0)，大小 12x15
+     */
+    private void drawSliderFromTexture() {
         int scrollBarX = this.guiLeft + 175;
         int scrollBarY = this.guiTop + 25;
         int scrollBarHeight = 105;
+        
+        // 滑块尺寸（与纹理中的图案大小一致）
         int sliderWidth = 12;
         int sliderHeight = 15;
 
+        // 计算滑块位置
         int sliderY = scrollBarY + (int) ((scrollBarHeight - sliderHeight) * this.currentScroll);
         if (sliderY < scrollBarY) sliderY = scrollBarY;
         if (sliderY + sliderHeight > scrollBarY + scrollBarHeight) {
             sliderY = scrollBarY + scrollBarHeight - sliderHeight;
         }
 
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        // 绑定主纹理
+        this.mc.getTextureManager().bindTexture(GUI_TEXTURE);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        buffer.pos(scrollBarX, sliderY + sliderHeight, 0).color(255, 0, 0, 255).endVertex();
-        buffer.pos(scrollBarX + sliderWidth, sliderY + sliderHeight, 0).color(255, 0, 0, 255).endVertex();
-        buffer.pos(scrollBarX + sliderWidth, sliderY, 0).color(255, 0, 0, 255).endVertex();
-        buffer.pos(scrollBarX, sliderY, 0).color(255, 0, 0, 255).endVertex();
-        tessellator.draw();
-
-        GlStateManager.enableTexture2D();
-        GlStateManager.disableBlend();
+        // 从纹理中截取滑块区域
+        // 纹理坐标: X=196, Y=0, 大小: 12x15
+        this.drawTexturedModalRect(
+            scrollBarX,     // 屏幕 X 坐标
+            sliderY,        // 屏幕 Y 坐标
+            196,            // 纹理 X 坐标（起始）
+            0,              // 纹理 Y 坐标（起始）
+            sliderWidth,    // 宽度
+            sliderHeight    // 高度
+        );
     }
 
     @Override
