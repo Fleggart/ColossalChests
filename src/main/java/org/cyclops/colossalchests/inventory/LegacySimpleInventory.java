@@ -30,7 +30,7 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         return handler.getSlots();
     }
 
-    // IInventory 要求实现 isEmpty()
+    // 只保留 isEmpty()，不要 func_191420_l()
     @Override
     public boolean isEmpty() {
         for (int i = 0; i < handler.getSlots(); i++) {
@@ -39,12 +39,6 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
             }
         }
         return true;
-    }
-
-    // INBTInventory 要求实现 func_191420_l()，调用 isEmpty()
-    @Override
-    public boolean func_191420_l() {
-        return isEmpty();
     }
 
     @Override
