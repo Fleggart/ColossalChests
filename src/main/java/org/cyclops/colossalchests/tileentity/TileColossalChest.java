@@ -4,7 +4,6 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import lombok.experimental.Delegate;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -21,6 +20,8 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.loot.ILootContainer;
 import net.minecraftforge.fml.relauncher.Side;
@@ -54,15 +55,12 @@ import org.cyclops.cyclopscore.helper.LocationHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.helper.WorldHelpers;
 import org.cyclops.cyclopscore.inventory.INBTInventory;
-import org.cyclops.cyclopscore.inventory.IndexedSlotlessItemHandlerWrapper;
 import org.cyclops.cyclopscore.persist.nbt.NBTPersist;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 import org.cyclops.cyclopscore.tileentity.InventoryTileEntityBase;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.PrimitiveIterator;
 import java.util.Random;
 
 public class TileColossalChest extends InventoryTileEntityBase implements CyclopsTileEntity.ITickingTile, ILootContainer {
@@ -123,9 +121,7 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
     }
 
     protected void addSlotlessItemHandlerCapability() {
-        // Temporarily disabled due to API changes in IndexedSlotlessItemHandlerWrapper
-        // This only affects compatibility with CommonCapabilities mod
-        // The chest inventory works perfectly without this capability
+        // Temporarily disabled due to API changes
     }
 
     public Vec3i getSize() {
@@ -343,21 +339,110 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return true;
     }
 
+    // ===== IInventory 接口实现 =====
+    
     @Override
-    public void openInventory(EntityPlayer entityPlayer) {
-        if (!entityPlayer.isSpectator()) {
-            super.openInventory(entityPlayer);
+    public int getSizeInventory() {
+        return getInventory().getSizeInventory();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return getInventory().isEmpty();
+    }
+
+    @Override
+    public ItemStack getStackInSlot(int index) {
+        return getInventory().getStackInSlot(index);
+    }
+
+    @Override
+    public ItemStack decrStackSize(int index, int count) {
+        return getInventory().decrStackSize(index, count);
+    }
+
+    @Override
+    public ItemStack removeStackFromSlot(int index) {
+        return getInventory().removeStackFromSlot(index);
+    }
+
+    @Override
+    public void setInventorySlotContents(int index, ItemStack stack) {
+        getInventory().setInventorySlotContents(index, stack);
+    }
+
+    @Override
+    public int getInventoryStackLimit() {
+        return getInventory().getInventoryStackLimit();
+    }
+
+    @Override
+    public void markDirty() {
+        getInventory().markDirty();
+    }
+
+    @Override
+    public boolean isUsableByPlayer(EntityPlayer player) {
+        return getInventory().isUsableByPlayer(player);
+    }
+
+    @Override
+    public void openInventory(EntityPlayer player) {
+        if (!player.isSpectator()) {
+            getInventory().openInventory(player);
             triggerPlayerUsageChange(1);
         }
     }
 
     @Override
-    public void closeInventory(EntityPlayer entityPlayer) {
-        if (!entityPlayer.isSpectator()) {
-            super.closeInventory(entityPlayer);
+    public void closeInventory(EntityPlayer player) {
+        if (!player.isSpectator()) {
+            getInventory().closeInventory(player);
             triggerPlayerUsageChange(-1);
         }
     }
+
+    @Override
+    public boolean isItemValidForSlot(int index, ItemStack stack) {
+        return getInventory().isItemValidForSlot(index, stack);
+    }
+
+    @Override
+    public int getField(int id) {
+        return getInventory().getField(id);
+    }
+
+    @Override
+    public void setField(int id, int value) {
+        getInventory().setField(id, value);
+    }
+
+    @Override
+    public int getFieldCount() {
+        return getInventory().getFieldCount();
+    }
+
+    @Override
+    public void clear() {
+        getInventory().clear();
+    }
+
+    @Override
+    public String getName() {
+        return getInventory().getName();
+    }
+
+    @Override
+    public boolean hasCustomName() {
+        return getInventory().hasCustomName();
+    }
+
+    @Override
+    public ITextComponent getDisplayName() {
+        return getInventory().getDisplayName();
+    }
+
+    // ===== 其他方法 =====
 
     private void triggerPlayerUsageChange(int change) {
         if (world != null) {
@@ -366,7 +451,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         }
     }
 
-    @Override
     public INBTInventory getInventory() {
         if (getWorld() != null && getWorld().isRemote && (inventory == null || inventory.getSizeInventory() != calculateInventorySize())) {
             return inventory = constructInventory();
@@ -378,33 +462,6 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
             inventory = constructInventory();
         }
         return inventory;
-    }
-
-    @Override
-    public int getSizeInventory() {
-        return getInventory().getSizeInventory();
-    }
-
-    @Override
-    public void clear() {
-        if (inventory != null) {
-            for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                inventory.setInventorySlotContents(i, ItemStack.EMPTY);
-            }
-        }
-    }
-
-    @Override
-    public int getField(int id) {
-        return 0;
-    }
-
-    @Override
-    public void setField(int id, int value) {}
-
-    @Override
-    public int getFieldCount() {
-        return 0;
     }
 
     @Override
@@ -480,19 +537,8 @@ public class TileColossalChest extends InventoryTileEntityBase implements Cyclop
         return new Vec3i(size, size, size);
     }
 
-    @Override
-    public boolean hasCustomName() {
-        return customName != null && customName.length() > 0;
-    }
-
     public void setCustomName(String name) {
         this.customName = name;
-    }
-
-    @Override
-    public String getName() {
-        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.colossalchest.name",
-                getMaterial().getLocalizedName(), getSizeSingular());
     }
 
     public void addInterface(Vec3i blockPos) {
