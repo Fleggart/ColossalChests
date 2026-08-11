@@ -39,6 +39,7 @@ import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
 import org.cyclops.cyclopscore.helper.LocationHelpers;
 import org.cyclops.cyclopscore.helper.MinecraftHelpers;
+import org.cyclops.cyclopscore.helper.TileHelpers;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
 import java.util.*;
@@ -47,7 +48,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     private static final int TICK_MODULUS = 200;
 
-    // ========== 结构检测器 ==========
+    // 结构检测器
     public static class Detector {
         public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
             if (world == null || center == null) return false;
@@ -191,12 +192,13 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                                     block instanceof ChestWall || 
                                     block instanceof Interface) {
                                     
-                                    // 设置 ACTIVE 状态
+                                    // 设置 ACTIVE 状态，使用 Flag = 3
                                     IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
                                     if (block == ColossalChest.getInstance()) {
                                         newState = newState.withProperty(ColossalChest.MATERIAL, material);
                                     }
-                                    world.setBlockState(pos, newState, MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+                                    world.setBlockState(pos, newState, 3);
+                                    world.notifyBlockUpdate(pos, state, newState, 3);
                                     
                                     // 更新 TileEntity
                                     if (block == ColossalChest.getInstance()) {
@@ -242,8 +244,9 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             }
             for (BlockPos pos : toClean) {
                 IBlockState state = world.getBlockState(pos);
-                world.setBlockState(pos, state.withProperty(ColossalChest.ACTIVE, false), 
-                        MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
+                // 使用 Flag = 3 强制通知客户端重绘
+                world.setBlockState(pos, state.withProperty(ColossalChest.ACTIVE, false), 3);
+                world.notifyBlockUpdate(pos, state, state.withProperty(ColossalChest.ACTIVE, false), 3);
             }
             return false;
         }
@@ -259,7 +262,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     private String customName = null;
     private int materialId = 0;
     private int modVersion = 0;
-    private List<Vec3i> interfaceLocations = new ArrayList<>();
+    private List<BlockPos> interfaceLocations = new ArrayList<>();
     private static final int MOD_VERSION = 1;
 
     public float prevLidAngle;
@@ -280,6 +283,58 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     public Vec3i getSize() {
         return size;
+    }
+
+    /**
+     * 结构解体时主动清理所有关联方块
+     */
+    private void unformStructure() {
+        if (this.world != null && !this.world.isRemote) {
+            // 1. 获取解体前记录的巨型箱子整个 3D 边界范围
+            BlockPos center = getPos();
+            Vec3i currentSize = getSize();
+            
+            if (currentSize != null && !currentSize.equals(Vec3i.NULL_VECTOR)) {
+                // 计算巨型箱子的起始点和终点
+                int dx = currentSize.getX() / 2;
+                int dy = currentSize.getY() / 2;
+                int dz = currentSize.getZ() / 2;
+                
+                // 如果尺寸是偶数，需要调整偏移量确保覆盖所有方块
+                if (currentSize.getX() % 2 == 0) dx = currentSize.getX() / 2;
+                if (currentSize.getY() % 2 == 0) dy = currentSize.getY() / 2;
+                if (currentSize.getZ() % 2 == 0) dz = currentSize.getZ() / 2;
+                
+                BlockPos minPos = center.add(-dx, -dy, -dz);
+                BlockPos maxPos = center.add(dx, dy, dz);
+                
+                // 2. 遍历整个结构覆盖的所有 BlockPos，强制刷回 ACTIVE = false
+                for (BlockPos pos : BlockPos.getAllInBox(minPos, maxPos)) {
+                    IBlockState state = world.getBlockState(pos);
+                    // 只要是本模组的墙体、接口或核心，全部强刷 Flag 3
+                    if (state.getPropertyKeys().contains(ColossalChest.ACTIVE) && state.getValue(ColossalChest.ACTIVE)) {
+                        IBlockState newState = state.withProperty(ColossalChest.ACTIVE, false);
+                        world.setBlockState(pos, newState, 3);
+                        world.notifyBlockUpdate(pos, state, newState, 3);
+                    }
+                }
+            }
+            
+            // 3. 显式清空所有接口 TileEntity 中的核心坐标引用 (corePosition = null)
+            if (this.interfaceLocations != null) {
+                for (BlockPos interfacePos : this.interfaceLocations) {
+                    TileInterface tileInterface = TileHelpers.getSafeTile(world, interfacePos, TileInterface.class);
+                    if (tileInterface != null) {
+                        tileInterface.setCorePosition(null);
+                    }
+                }
+                this.interfaceLocations.clear();
+            }
+        }
+        
+        // 4. 重置自身数据
+        this.setSize(Vec3i.NULL_VECTOR);
+        this.markDirty();
     }
 
     public void setSize(Vec3i size) {
@@ -305,11 +360,14 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 this.lastValidInventory = null;
             }
         } else {
-            // 结构失效时，清理 interfaceLocations 中的无效条目
+            // 结构失效时，调用主动清理方法
+            if (world != null && !world.isRemote) {
+                unformStructure();
+            }
+            // 清理 interfaceLocations 中的无效条目
             if (world != null) {
                 interfaceLocations.removeIf(loc -> {
-                    BlockPos pos = new BlockPos(loc);
-                    IBlockState state = world.getBlockState(pos);
+                    IBlockState state = world.getBlockState(loc);
                     Block block = state.getBlock();
                     return !(block instanceof ChestWall || block instanceof Interface);
                 });
@@ -408,15 +466,15 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return hash;
     }
 
-    // ===================== 接口管理 =====================
+    // 接口管理 
 
-    public void addInterface(Vec3i location) {
+    public void addInterface(BlockPos location) {
         if (!interfaceLocations.contains(location)) {
             interfaceLocations.add(location);
         }
     }
 
-    public void removeInterface(Vec3i location) {
+    public void removeInterface(BlockPos location) {
         interfaceLocations.remove(location);
         markDirty();
     }
@@ -426,7 +484,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         markDirty();
     }
 
-    public List<Vec3i> getInterfaceLocations() {
+    public List<BlockPos> getInterfaceLocations() {
         return Collections.unmodifiableList(interfaceLocations);
     }
 
@@ -621,7 +679,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         }
     }
 
-    // ===================== NBT =====================
+    //  NBT 
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
@@ -648,7 +706,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         }
         
         NBTTagList list = new NBTTagList();
-        for (Vec3i v : interfaceLocations) {
+        for (BlockPos v : interfaceLocations) {
             NBTTagCompound tag = new NBTTagCompound();
             tag.setInteger("x", v.getX());
             tag.setInteger("y", v.getY());
@@ -697,7 +755,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         NBTTagList list = compound.getTagList("interfaceLocations", 10);
         for (int i = 0; i < list.tagCount(); i++) {
             NBTTagCompound tag = list.getCompoundTagAt(i);
-            interfaceLocations.add(new Vec3i(
+            interfaceLocations.add(new BlockPos(
                 tag.getInteger("x"),
                 tag.getInteger("y"),
                 tag.getInteger("z")
@@ -705,7 +763,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         }
     }
 
-    // ===================== 网络 =====================
+    // 网络
 
     @Override
     public NBTTagCompound getUpdateTag() {
@@ -731,7 +789,8 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return super.receiveClientEvent(id, type);
     }
 
-    // ===================== 渲染 =====================
+    
+// 渲染
 
     public Vec3d getRenderOffset() {
         return renderOffset;
@@ -755,7 +814,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return isUsableByPlayer(player);
     }
 
-    // ===================== ILootContainer =====================
+    //  ILootContainer 
 
     @Override
     public ResourceLocation getLootTable() {
