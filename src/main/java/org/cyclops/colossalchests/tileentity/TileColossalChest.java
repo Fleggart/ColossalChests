@@ -13,7 +13,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.ResourceLocation;
@@ -35,10 +34,11 @@ import org.cyclops.colossalchests.block.ColossalChest;
 import org.cyclops.colossalchests.block.ColossalChestConfig;
 import org.cyclops.colossalchests.block.PropertyMaterial;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
+import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
 import java.util.*;
 
-public class TileColossalChest extends TileEntity implements IInventory, ISidedInventory, ITickable, ILootContainer {
+public class TileColossalChest extends CyclopsTileEntity implements IInventory, ISidedInventory, ITickable, ILootContainer {
 
     private static final int TICK_MODULUS = 200;
 
