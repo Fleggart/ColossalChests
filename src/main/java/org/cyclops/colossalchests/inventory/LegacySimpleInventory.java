@@ -30,8 +30,9 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         return handler.getSlots();
     }
 
+    // 使用 func_191420_l() 而不是 isEmpty()
     @Override
-    public boolean isEmpty() {
+    public boolean func_191420_l() {
         for (int i = 0; i < handler.getSlots(); i++) {
             if (!handler.getStackInSlot(i).isEmpty()) {
                 return false;
@@ -39,9 +40,6 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         }
         return true;
     }
-
-    // 删除这个方法！MCP 映射会自动处理
-    // public boolean func_191420_l() { return isEmpty(); }
 
     @Override
     public ItemStack getStackInSlot(int index) {
