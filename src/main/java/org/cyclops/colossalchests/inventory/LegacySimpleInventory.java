@@ -151,6 +151,13 @@ public class LegacySimpleInventory implements IInventory, INBTInventory {
         nbt.setTag("inventory", handler.serializeNBT());
     }
 
+    @Override
+    public void readFromNBT(NBTTagCompound nbt) {
+        if (nbt.hasKey("inventory")) {
+            handler.deserializeNBT(nbt.getCompoundTag("inventory"));
+        }
+    }
+
     // ===== Convenience methods =====
     public NBTTagCompound serializeNBT() {
         return handler.serializeNBT();
