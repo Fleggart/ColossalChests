@@ -12,13 +12,12 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockAccess;
@@ -34,7 +33,6 @@ import org.cyclops.cyclopscore.config.configurable.ConfigurableBlockContainer;
 import org.cyclops.cyclopscore.config.extendedconfig.BlockConfig;
 import org.cyclops.cyclopscore.config.extendedconfig.ExtendedConfig;
 import org.cyclops.cyclopscore.helper.BlockHelpers;
-import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.helper.TileHelpers;
 
 public class Interface extends ConfigurableBlockContainer implements CubeDetector.IDetectionListener {
@@ -102,9 +100,8 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
     @Override
     public void onBlockAdded(World world, BlockPos blockPos, IBlockState blockState) {
         super.onBlockAdded(world, blockPos, blockState);
-        if(world.getBlockState(blockPos).getBlock() != blockState.getBlock()) {
-            ColossalChest.triggerDetector(world, blockPos, true, null);
-        }
+        // 始终触发检测，移除多余的条件检查
+        ColossalChest.triggerDetector(world, blockPos, true, null);
     }
 
     @Override
@@ -128,7 +125,6 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
             boolean currentActive = currentState.getValue(ACTIVE);
             IBlockState newState = currentState.withProperty(ACTIVE, valid);
             
-            // 使用 Flag = 3（BLOCK_NOTIFY_ALL），强制同步客户端并重新渲染
             world.setBlockState(location, newState, 3);
             world.notifyBlockUpdate(location, currentState, newState, 3);
             
@@ -191,7 +187,6 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
 
     @Override
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
-        // 强制返回非活跃状态
         IBlockState state = super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer, hand);
         return state.withProperty(ACTIVE, false);
     }
