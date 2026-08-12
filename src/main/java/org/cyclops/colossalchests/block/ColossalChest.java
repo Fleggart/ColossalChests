@@ -30,7 +30,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.tuple.Pair;
-import org.cyclops.colossalchests.Advancements;
+// 移除: import org.cyclops.colossalchests.Advancements;
 import org.cyclops.colossalchests.client.gui.container.GuiColossalChest;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.colossalchests.tileentity.TileColossalChest;
@@ -133,21 +133,8 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         }
         
         boolean result = TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
-        if (player instanceof EntityPlayerMP && result) {
-            IBlockState blockState = world.getBlockState(blockPos);
-            if (blockState.getValue(ACTIVE)) {
-                PropertyMaterial.Type material = blockState.getValue(MATERIAL);
-                TileColossalChest tile = TileHelpers.getSafeTile(world, blockPos, TileColossalChest.class);
-                if (tile == null) {
-                    BlockPos corePos = getCoreLocation(world, blockPos);
-                    tile = TileHelpers.getSafeTile(world, corePos, TileColossalChest.class);
-                }
-                if (tile != null) {
-                    Advancements.CHEST_FORMED.trigger((EntityPlayerMP) player,
-                            Pair.of(material, tile.getSizeSingular()));
-                }
-            }
-        }
+        // 移除成就触发
+        // if (player instanceof EntityPlayerMP && result) { ... Advancements.CHEST_FORMED.trigger(...) ... }
         return result;
     }
 
