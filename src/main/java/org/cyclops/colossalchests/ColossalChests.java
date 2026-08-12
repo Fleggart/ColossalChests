@@ -15,7 +15,6 @@ import org.cyclops.colossalchests.block.ColossalChestConfig;
 import org.cyclops.colossalchests.block.InterfaceConfig;
 import org.cyclops.colossalchests.block.UncolossalChestConfig;
 import org.cyclops.colossalchests.item.ItemUpgradeToolConfig;
-import org.cyclops.colossalchests.modcompat.IronChestModCompat;
 import org.cyclops.cyclopscore.config.ConfigHandler;
 import org.cyclops.cyclopscore.init.IObjectReference;
 import org.cyclops.cyclopscore.init.ItemCreativeTab;
