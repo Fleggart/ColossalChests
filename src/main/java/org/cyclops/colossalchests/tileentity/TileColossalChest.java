@@ -53,11 +53,9 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
             if (world == null || center == null) return false;
             
-            // 扫描所有方向，找出巨型箱子的边界
             int minX = center.getX(), minY = center.getY(), minZ = center.getZ();
             int maxX = center.getX(), maxY = center.getY(), maxZ = center.getZ();
             
-            // 检查方块是否属于巨型箱子结构
             java.util.function.Predicate<IBlockState> isChestBlock = state -> {
                 Block block = state.getBlock();
                 return block == ColossalChest.getInstance() || 
@@ -65,7 +63,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                        block instanceof Interface;
             };
             
-            // 向正方向扩展 X
             while (true) {
                 BlockPos check = new BlockPos(maxX + 1, center.getY(), center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -76,7 +73,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 向正方向扩展 Y
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), maxY + 1, center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -87,7 +83,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 向正方向扩展 Z
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), center.getY(), maxZ + 1);
                 if (!world.isBlockLoaded(check)) break;
@@ -99,7 +94,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 }
             }
             
-            // 向负方向扩展 X
             while (true) {
                 BlockPos check = new BlockPos(minX - 1, center.getY(), center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -110,7 +104,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 向负方向扩展 Y
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), minY - 1, center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -121,7 +114,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 向负方向扩展 Z
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), center.getY(), minZ - 1);
                 if (!world.isBlockLoaded(check)) break;
@@ -137,20 +129,17 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             int sizeY = maxY - minY + 1;
             int sizeZ = maxZ - minZ + 1;
             
-            // 获取最大尺寸配置
             Vec3i maxSizeConfig = getMaxSize();
             int maxSizeX = maxSizeConfig.getX() + 1;
             int maxSizeY = maxSizeConfig.getY() + 1;
             int maxSizeZ = maxSizeConfig.getZ() + 1;
             
-            // 检查是否是有效的巨型箱子（至少 2x2x2，且不超过最大尺寸）
             if (sizeX >= 2 && sizeY >= 2 && sizeZ >= 2 &&
                 sizeX <= maxSizeX && sizeY <= maxSizeY && sizeZ <= maxSizeZ) {
                 
                 Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
                 BlockPos origin = new BlockPos(minX, minY, minZ);
                 
-                // 检查是否所有方块都是同一材质
                 PropertyMaterial.Type material = null;
                 boolean valid = true;
                 int coreCount = 0;
@@ -178,9 +167,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     }
                 }
                 
-                // 必须有且仅有一个核心方块，且所有方块材质一致
                 if (valid && coreCount == 1 && material != null) {
-                    // 更新所有方块的状态
                     for (int x = minX; x <= maxX; x++) {
                         for (int y = minY; y <= maxY; y++) {
                             for (int z = minZ; z <= maxZ; z++) {
@@ -192,7 +179,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                                     block instanceof ChestWall || 
                                     block instanceof Interface) {
                                     
-                                    // 设置 ACTIVE 状态，使用 Flag = 3
                                     IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
                                     if (block == ColossalChest.getInstance()) {
                                         newState = newState.withProperty(ColossalChest.MATERIAL, material);
@@ -200,7 +186,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                                     world.setBlockState(pos, newState, 3);
                                     world.notifyBlockUpdate(pos, state, newState, 3);
                                     
-                                    // 更新 TileEntity
                                     if (block == ColossalChest.getInstance()) {
                                         TileColossalChest tile = (TileColossalChest) world.getTileEntity(pos);
                                         if (tile != null) {
@@ -222,7 +207,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 }
             }
             
-            // 结构无效，清理所有方块的状态（从中心点向外扩散）
             List<BlockPos> toClean = new ArrayList<>();
             int maxSizeConfigInt = ColossalChestConfig.maxSize;
             for (int dx = -maxSizeConfigInt; dx <= maxSizeConfigInt; dx++) {
@@ -244,7 +228,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             }
             for (BlockPos pos : toClean) {
                 IBlockState state = world.getBlockState(pos);
-                // 使用 Flag = 3 强制通知客户端重绘
                 world.setBlockState(pos, state.withProperty(ColossalChest.ACTIVE, false), 3);
                 world.notifyBlockUpdate(pos, state, state.withProperty(ColossalChest.ACTIVE, false), 3);
             }
@@ -268,7 +251,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public float prevLidAngle;
     public float lidAngle;
     private int playersUsing;
-    private boolean recreateNullInventory = true;
+    // 移除未使用的字段 recreateNullInventory
 
     private Block block;
     private Map<EnumFacing, int[]> facingSlots = new HashMap<>();
@@ -278,29 +261,22 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         this.block = ColossalChest.getInstance();
     }
 
-    public static void detectStructure(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
-    }
+    // 删除空的 detectStructure 方法
 
     public Vec3i getSize() {
         return size;
     }
 
-    /**
-     * 结构解体时主动清理所有关联方块
-     */
     private void unformStructure() {
         if (this.world != null && !this.world.isRemote) {
-            // 1. 获取解体前记录的巨型箱子整个 3D 边界范围
             BlockPos center = getPos();
             Vec3i currentSize = getSize();
             
             if (currentSize != null && !currentSize.equals(Vec3i.NULL_VECTOR)) {
-                // 计算巨型箱子的起始点和终点
                 int dx = currentSize.getX() / 2;
                 int dy = currentSize.getY() / 2;
                 int dz = currentSize.getZ() / 2;
                 
-                // 如果尺寸是偶数，需要调整偏移量确保覆盖所有方块
                 if (currentSize.getX() % 2 == 0) dx = currentSize.getX() / 2;
                 if (currentSize.getY() % 2 == 0) dy = currentSize.getY() / 2;
                 if (currentSize.getZ() % 2 == 0) dz = currentSize.getZ() / 2;
@@ -308,10 +284,8 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 BlockPos minPos = center.add(-dx, -dy, -dz);
                 BlockPos maxPos = center.add(dx, dy, dz);
                 
-                // 2. 遍历整个结构覆盖的所有 BlockPos，强制刷回 ACTIVE = false
                 for (BlockPos pos : BlockPos.getAllInBox(minPos, maxPos)) {
                     IBlockState state = world.getBlockState(pos);
-                    // 只要是本模组的墙体、接口或核心，全部强刷 Flag 3
                     if (state.getPropertyKeys().contains(ColossalChest.ACTIVE) && state.getValue(ColossalChest.ACTIVE)) {
                         IBlockState newState = state.withProperty(ColossalChest.ACTIVE, false);
                         world.setBlockState(pos, newState, 3);
@@ -320,7 +294,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 }
             }
             
-            // 3. 显式清空所有接口 TileEntity 中的核心坐标引用 (corePosition = null)
             if (this.interfaceLocations != null) {
                 for (BlockPos interfacePos : this.interfaceLocations) {
                     TileInterface tileInterface = TileHelpers.getSafeTile(world, interfacePos, TileInterface.class);
@@ -332,7 +305,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             }
         }
         
-        // 4. 重置自身数据
         this.setSize(Vec3i.NULL_VECTOR);
         this.markDirty();
     }
@@ -360,11 +332,9 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 this.lastValidInventory = null;
             }
         } else {
-            // 结构失效时，调用主动清理方法
             if (world != null && !world.isRemote) {
                 unformStructure();
             }
-            // 清理 interfaceLocations 中的无效条目
             if (world != null) {
                 interfaceLocations.removeIf(loc -> {
                     IBlockState state = world.getBlockState(loc);
@@ -448,7 +418,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         if (lastValidInventory != null) {
             return new ItemStackHandler(0);
         }
-        if (inventory == null && this.recreateNullInventory) {
+        if (inventory == null) {
             inventory = constructInventory();
         }
         return inventory;
