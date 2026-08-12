@@ -7,7 +7,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -15,7 +14,6 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -35,9 +33,6 @@ import org.cyclops.colossalchests.block.ColossalChestConfig;
 import org.cyclops.colossalchests.block.Interface;
 import org.cyclops.colossalchests.block.PropertyMaterial;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
-import org.cyclops.cyclopscore.helper.L10NHelpers;
-import org.cyclops.cyclopscore.helper.LocationHelpers;
-import org.cyclops.cyclopscore.helper.MinecraftHelpers;
 import org.cyclops.cyclopscore.helper.TileHelpers;
 import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
@@ -250,7 +245,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public float prevLidAngle;
     public float lidAngle;
     private int playersUsing;
-    // 移除未使用的字段 recreateNullInventory
 
     private Block block;
     private Map<EnumFacing, int[]> facingSlots = new HashMap<>();
@@ -259,8 +253,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         this.inventory = new ItemStackHandler(0);
         this.block = ColossalChest.getInstance();
     }
-
-    // 删除空的 detectStructure 方法
 
     public Vec3i getSize() {
         return size;
@@ -393,14 +385,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     private ItemStackHandler constructInventory() {
         int size = calculateInventorySize();
-        if (GeneralConfig.creativeChests && !getWorld().isRemote) {
-            ItemStackHandler inv = new ItemStackHandler(size);
-            Random random = new Random();
-            for (int i = 0; i < size; i++) {
-                inv.setStackInSlot(i, new ItemStack(Item.REGISTRY.getRandomObject(random)));
-            }
-            return inv;
-        }
+        // 直接创建空的物品栏
         return new ItemStackHandler(size);
     }
 
@@ -435,7 +420,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return hash;
     }
 
-    // 接口管理 
+    // 接口管理
 
     public void addInterface(BlockPos location) {
         if (!interfaceLocations.contains(location)) {
@@ -648,7 +633,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         }
     }
 
-    //  NBT 
+    // ===================== NBT =====================
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
@@ -732,7 +717,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         }
     }
 
-    // 网络
+    // ===================== 网络 =====================
 
     @Override
     public NBTTagCompound getUpdateTag() {
@@ -758,8 +743,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return super.receiveClientEvent(id, type);
     }
 
-    
-// 渲染
+    // ===================== 渲染 =====================
 
     public Vec3d getRenderOffset() {
         return renderOffset;
@@ -782,5 +766,4 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     public boolean canInteractWith(EntityPlayer player) {
         return isUsableByPlayer(player);
     }
-
-}
+ }
