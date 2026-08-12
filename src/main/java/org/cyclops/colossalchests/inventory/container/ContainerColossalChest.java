@@ -1,10 +1,6 @@
 package org.cyclops.colossalchests.inventory.container;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-// 移除: import invtweaks.api.container.ChestContainer;
-// 移除: import invtweaks.api.container.ContainerSection;
-// 移除: import invtweaks.api.container.ContainerSectionCallback;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -29,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-// 移除 @ChestContainer 注解
 public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
     private static final int INVENTORY_OFFSET_X = 9;
@@ -267,5 +262,5 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         playerNetServerHandler.sendPacket(new SPacketSetSlot(-1, -1, player.inventory.getItemStack()));
     }
 
-    // 移除 @ContainerSectionCallback 方法和 getContainerSelection() 方法
+
 }
