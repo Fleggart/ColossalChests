@@ -4,8 +4,6 @@ import org.cyclops.cyclopscore.config.ConfigurableProperty;
 import org.cyclops.cyclopscore.config.ConfigurableType;
 import org.cyclops.cyclopscore.config.ConfigurableTypeCategory;
 import org.cyclops.cyclopscore.config.extendedconfig.DummyConfig;
-import org.cyclops.cyclopscore.init.ModBase;
-import org.cyclops.cyclopscore.tracking.Analytics;
 
 /**
  * A config with general options for this mod.
@@ -13,24 +11,6 @@ import org.cyclops.cyclopscore.tracking.Analytics;
  *
  */
 public class GeneralConfig extends DummyConfig {
-
-    /**
-     * If the recipe loader should crash when finding invalid recipes.
-     */
-    @ConfigurableProperty(category = ConfigurableTypeCategory.CORE, comment = "If the recipe loader should crash when finding invalid recipes.", requiresMcRestart = true)
-    public static boolean crashOnInvalidRecipe = false;
-
-    /**
-     * If mod compatibility loader should crash hard if errors occur in that process.
-     */
-    @ConfigurableProperty(category = ConfigurableTypeCategory.CORE, comment = "If mod compatibility loader should crash hard if errors occur in that process.", requiresMcRestart = true)
-    public static boolean crashOnModCompatCrash = false;
-
-    /**
-     * If an anonymous mod startup analytics request may be sent to our analytics service.
-     */
-    @ConfigurableProperty(category = ConfigurableTypeCategory.CORE, comment = "If an anonymous mod startup analytics request may be sent to our analytics service.")
-    public static boolean analytics = true;
 
     /**
      * If items should be ejected from the chests if one of the structure blocks are removed.
@@ -76,12 +56,7 @@ public class GeneralConfig extends DummyConfig {
 
     @Override
     public void onRegistered() {
-        getMod().putGenericReference(ModBase.REFKEY_CRASH_ON_INVALID_RECIPE, GeneralConfig.crashOnInvalidRecipe);
-        getMod().putGenericReference(ModBase.REFKEY_CRASH_ON_MODCOMPAT_CRASH, GeneralConfig.crashOnModCompatCrash);
-
-        if(analytics) {
-            Analytics.registerMod(getMod(), Reference.GA_TRACKING_ID);
-        }
+        // 移除所有 putGenericReference 和 Analytics 调用
     }
     
     @Override
