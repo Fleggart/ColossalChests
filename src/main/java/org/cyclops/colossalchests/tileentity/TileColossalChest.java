@@ -1,6 +1,6 @@
 package org.cyclops.colossalchests.tileentity;
 
-import com.google.common.collect.Lists;
+import java.util.ArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -38,16 +38,6 @@ import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
 import java.util.*;
 
-/**
- * Tile entity for the Colossal Chest multiblock structure.
- * 
- * Maximum chest size is hardcoded to 10x10x10 for performance reasons:
- * - 10x10x10 = 1000 blocks = up to 27,000 inventory slots
- * - Larger sizes cause severe network and rendering lag
- * - This limit is not configurable to prevent player-induced performance issues
- * 
- * @author rubensworks
- */
 public class TileColossalChest extends CyclopsTileEntity implements IInventory, ISidedInventory, ITickable {
 
     // ========== 硬编码尺寸限制 ==========
@@ -288,12 +278,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 int dx = currentSize.getX() / 2;
                 int dy = currentSize.getY() / 2;
                 int dz = currentSize.getZ() / 2;
-                
-                // 如果尺寸是偶数，中心点偏移需要调整
-                // 例如 2x2x2 的中心在 (0.5, 0.5, 0.5)
-                // 但这里我们直接用整数除法，会向下取整，所以对于偶数尺寸需要额外处理
-                // 但 unformStructure 的目的是清理所有激活的方块，范围稍微大一点也没关系
-                // 所以这里不做精确调整，直接使用 floor 值，确保覆盖所有可能的位置
                 
                 BlockPos minPos = center.add(-dx, -dy, -dz);
                 BlockPos maxPos = center.add(dx, dy, dz);

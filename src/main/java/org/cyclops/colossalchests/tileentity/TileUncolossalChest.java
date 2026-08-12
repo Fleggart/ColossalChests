@@ -1,8 +1,5 @@
 package org.cyclops.colossalchests.tileentity;
 
-import com.google.common.collect.ContiguousSet;
-import com.google.common.collect.DiscreteDomain;
-import com.google.common.collect.Range;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
@@ -264,10 +261,11 @@ public class TileUncolossalChest extends CyclopsTileEntity implements ITickable,
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
         int size = getSizeInventory();
-        ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, size - 1), DiscreteDomain.integers()
-        );
-        return ArrayUtils.toPrimitive(integers.toArray(new Integer[0]));
+        int[] slots = new int[size];
+        for (int i = 0; i < size; i++) {
+           slots[i] = i;
+        }
+        return slots;
     }
 
     @Override
