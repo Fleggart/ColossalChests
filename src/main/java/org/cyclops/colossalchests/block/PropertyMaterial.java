@@ -1,11 +1,12 @@
 package org.cyclops.colossalchests.block;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import java.util.Optional;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import net.minecraft.block.properties.PropertyHelper;
 import org.cyclops.colossalchests.Reference;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
@@ -19,11 +20,11 @@ import java.util.Locale;
  */
 public class PropertyMaterial extends PropertyHelper<PropertyMaterial.Type> {
 
-    private final ImmutableSet<PropertyMaterial.Type> allowedValues;
+    private final Set<PropertyMaterial.Type> allowedValues;
 
     protected PropertyMaterial(String name, Collection<PropertyMaterial.Type> values) {
         super(name, Type.class);
-        this.allowedValues = ImmutableSet.copyOf(values);
+        this.allowedValues = Collections.unmodifiableSet(new HashSet<>(values));
     }
 
     public Collection<PropertyMaterial.Type> getAllowedValues() {
@@ -34,10 +35,10 @@ public class PropertyMaterial extends PropertyHelper<PropertyMaterial.Type> {
     public Optional<Type> parseValue(String value) {
         for (PropertyMaterial.Type type : allowedValues) {
             if(type.toString().equalsIgnoreCase(value)) {
-                return Optional.of(type);
+                return Optional.empty();
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     @Override
@@ -52,7 +53,7 @@ public class PropertyMaterial extends PropertyHelper<PropertyMaterial.Type> {
      * @return The property
      */
     public static PropertyMaterial create(String name, Class clazz) {
-        return create(name, clazz, Predicates.alwaysTrue());
+        return create(name, clazz, t -> true);
     }
 
     /**
@@ -63,7 +64,12 @@ public class PropertyMaterial extends PropertyHelper<PropertyMaterial.Type> {
      * @return The property
      */
     public static PropertyMaterial create(String name, Class clazz, Predicate filter) {
-        return create(name, clazz, Collections2.filter(Lists.newArrayList(clazz.getEnumConstants()), filter));
+        
+        return create(name, clazz, Arrays.stream(clazz.getEnumConstants())
+            .filter(filter)
+            .collect(Collectors.toList())
+         );
+        
     }
 
     /**
