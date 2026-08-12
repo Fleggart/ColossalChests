@@ -2,9 +2,9 @@ package org.cyclops.colossalchests.inventory.container;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import invtweaks.api.container.ChestContainer;
-import invtweaks.api.container.ContainerSection;
-import invtweaks.api.container.ContainerSectionCallback;
+// 移除: import invtweaks.api.container.ChestContainer;
+// 移除: import invtweaks.api.container.ContainerSection;
+// 移除: import invtweaks.api.container.ContainerSectionCallback;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-@ChestContainer(isLargeChest = true)
+// 移除 @ChestContainer 注解
 public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
     private static final int INVENTORY_OFFSET_X = 9;
@@ -267,27 +267,5 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
         playerNetServerHandler.sendPacket(new SPacketSetSlot(-1, -1, player.inventory.getItemStack()));
     }
 
-    @ContainerSectionCallback
-    public Map<ContainerSection, List<Slot>> getContainerSelection() {
-        try {
-            Map<ContainerSection, List<Slot>> selection = Maps.newHashMap();
-            List<Slot> chest = Lists.newArrayList();
-            List<Slot> playerInventory = Lists.newArrayList();
-            for (int i = 0; i < getSizeInventory(); i++) {
-                chest.add(this.getSlot(i));
-            }
-
-            for (int i = getSizeInventory(); i < getSizeInventory() + player.inventory.mainInventory.size(); i++) {
-                playerInventory.add(this.getSlot(i));
-            }
-            selection.put(ContainerSection.CHEST, chest);
-            selection.put(ContainerSection.INVENTORY, playerInventory);
-            return selection;
-        } catch (RuntimeException e) {
-            System.out.println("Size inv " + getSizeInventory());
-            System.out.println("Player size inv " + player.inventory.mainInventory.size());
-            System.out.println("Available slots " + inventorySlots.size());
-            throw e;
-        }
-    }
+    // 移除 @ContainerSectionCallback 方法和 getContainerSelection() 方法
 }
