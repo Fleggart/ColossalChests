@@ -45,10 +45,6 @@ public class ColossalChests extends ModBaseVersionable {
         super("colossalchests", "ColossalChests", "@VERSION@");
     }
 
-    @Override
-    protected void loadModCompats(ModCompatLoader modCompatLoader) {
-        modCompatLoader.addModCompat(new IronChestModCompat());
-    }
 
     @Override
     protected RecipeHandler constructRecipeHandler() {
