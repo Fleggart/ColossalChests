@@ -43,101 +43,142 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     private static final int TICK_MODULUS = 200;
 
     // 结构检测器
-    public static class Detector {
-        public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
-            if (world == null || center == null) return false;
+public static class Detector {
+    public boolean detect(World world, BlockPos center, BlockPos ignore, Object validationAction, boolean flag) {
+        if (world == null || center == null) return false;
+        
+        int minX = center.getX(), minY = center.getY(), minZ = center.getZ();
+        int maxX = center.getX(), maxY = center.getY(), maxZ = center.getZ();
+        
+        java.util.function.Predicate<IBlockState> isChestBlock = state -> {
+            Block block = state.getBlock();
+            return block == ColossalChest.getInstance() || 
+                   block instanceof ChestWall || 
+                   block instanceof Interface;
+        };
+        
+        // 扩展边界检测
+        while (true) {
+            BlockPos check = new BlockPos(maxX + 1, center.getY(), center.getZ());
+            if (!world.isBlockLoaded(check)) break;
+            IBlockState state = world.getBlockState(check);
+            if (isChestBlock.test(state)) {
+                maxX++;
+            } else {
+                break;
+            }
+        }
+        while (true) {
+            BlockPos check = new BlockPos(center.getX(), maxY + 1, center.getZ());
+            if (!world.isBlockLoaded(check)) break;
+            IBlockState state = world.getBlockState(check);
+            if (isChestBlock.test(state)) {
+                maxY++;
+            } else {
+                break;
+            }
+        }
+        while (true) {
+            BlockPos check = new BlockPos(center.getX(), center.getY(), maxZ + 1);
+            if (!world.isBlockLoaded(check)) break;
+            IBlockState state = world.getBlockState(check);
+            if (isChestBlock.test(state)) {
+                maxZ++;
+            } else {
+                break;
+            }
+        }
+        
+        while (true) {
+            BlockPos check = new BlockPos(minX - 1, center.getY(), center.getZ());
+            if (!world.isBlockLoaded(check)) break;
+            IBlockState state = world.getBlockState(check);
+            if (isChestBlock.test(state)) {
+                minX--;
+            } else {
+                break;
+            }
+        }
+        while (true) {
+            BlockPos check = new BlockPos(center.getX(), minY - 1, center.getZ());
+            if (!world.isBlockLoaded(check)) break;
+            IBlockState state = world.getBlockState(check);
+            if (isChestBlock.test(state)) {
+                minY--;
+            } else {
+                break;
+            }
+        }
+        while (true) {
+            BlockPos check = new BlockPos(center.getX(), center.getY(), minZ - 1);
+            if (!world.isBlockLoaded(check)) break;
+            IBlockState state = world.getBlockState(check);
+            if (isChestBlock.test(state)) {
+                minZ--;
+            } else {
+                break;
+            }
+        }
+        
+        int sizeX = maxX - minX + 1;
+        int sizeY = maxY - minY + 1;
+        int sizeZ = maxZ - minZ + 1;
+        
+        // ========== 新增：限制只能为立方体 (2x2x2 到 10x10x10) ==========
+        // 检查是否所有维度大小相等
+        if (sizeX != sizeY || sizeY != sizeZ) {
+            // 不是立方体，清理无效结构
+            cleanInvalidStructure(world, center, minX, minY, minZ, maxX, maxY, maxZ);
+            return false;
+        }
+        
+        // 检查大小是否在 2 到 10 之间
+        if (sizeX < 2 || sizeX > 10) {
+            // 大小超出范围，清理无效结构
+            cleanInvalidStructure(world, center, minX, minY, minZ, maxX, maxY, maxZ);
+            return false;
+        }
+        // ========== 立方体限制结束 ==========
+        
+        Vec3i maxSizeConfig = getMaxSize();
+        int maxSizeX = maxSizeConfig.getX() + 1;
+        int maxSizeY = maxSizeConfig.getY() + 1;
+        int maxSizeZ = maxSizeConfig.getZ() + 1;
+        
+        if (sizeX >= 2 && sizeY >= 2 && sizeZ >= 2 &&
+            sizeX <= maxSizeX && sizeY <= maxSizeY && sizeZ <= maxSizeZ) {
             
-            int minX = center.getX(), minY = center.getY(), minZ = center.getZ();
-            int maxX = center.getX(), maxY = center.getY(), maxZ = center.getZ();
+            Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
+            BlockPos origin = new BlockPos(minX, minY, minZ);
             
-            java.util.function.Predicate<IBlockState> isChestBlock = state -> {
-                Block block = state.getBlock();
-                return block == ColossalChest.getInstance() || 
-                       block instanceof ChestWall || 
-                       block instanceof Interface;
-            };
+            PropertyMaterial.Type material = null;
+            boolean valid = true;
+            int coreCount = 0;
             
-            while (true) {
-                BlockPos check = new BlockPos(maxX + 1, center.getY(), center.getZ());
-                if (!world.isBlockLoaded(check)) break;
-                IBlockState state = world.getBlockState(check);
-                if (isChestBlock.test(state)) {
-                    maxX++;
-                } else {
-                    break;
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        BlockPos pos = new BlockPos(x, y, z);
+                        IBlockState state = world.getBlockState(pos);
+                        Block block = state.getBlock();
+                        
+                        if (block == ColossalChest.getInstance()) {
+                            coreCount++;
+                            PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
+                            if (material == null) material = mat;
+                            else if (material != mat) valid = false;
+                        } else if (block instanceof ChestWall || block instanceof Interface) {
+                            PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
+                            if (material == null) material = mat;
+                            else if (material != mat) valid = false;
+                        } else {
+                            valid = false;
+                        }
+                    }
                 }
             }
-            while (true) {
-                BlockPos check = new BlockPos(center.getX(), maxY + 1, center.getZ());
-                if (!world.isBlockLoaded(check)) break;
-                IBlockState state = world.getBlockState(check);
-                if (isChestBlock.test(state)) {
-                    maxY++;
-                } else {
-                    break;
-                }
-            }
-            while (true) {
-                BlockPos check = new BlockPos(center.getX(), center.getY(), maxZ + 1);
-                if (!world.isBlockLoaded(check)) break;
-                IBlockState state = world.getBlockState(check);
-                if (isChestBlock.test(state)) {
-                    maxZ++;
-                } else {
-                    break;
-                }
-            }
             
-            while (true) {
-                BlockPos check = new BlockPos(minX - 1, center.getY(), center.getZ());
-                if (!world.isBlockLoaded(check)) break;
-                IBlockState state = world.getBlockState(check);
-                if (isChestBlock.test(state)) {
-                    minX--;
-                } else {
-                    break;
-                }
-            }
-            while (true) {
-                BlockPos check = new BlockPos(center.getX(), minY - 1, center.getZ());
-                if (!world.isBlockLoaded(check)) break;
-                IBlockState state = world.getBlockState(check);
-                if (isChestBlock.test(state)) {
-                    minY--;
-                } else {
-                    break;
-                }
-            }
-            while (true) {
-                BlockPos check = new BlockPos(center.getX(), center.getY(), minZ - 1);
-                if (!world.isBlockLoaded(check)) break;
-                IBlockState state = world.getBlockState(check);
-                if (isChestBlock.test(state)) {
-                    minZ--;
-                } else {
-                    break;
-                }
-            }
-            
-            int sizeX = maxX - minX + 1;
-            int sizeY = maxY - minY + 1;
-            int sizeZ = maxZ - minZ + 1;
-            
-            Vec3i maxSizeConfig = getMaxSize();
-            int maxSizeX = maxSizeConfig.getX() + 1;
-            int maxSizeY = maxSizeConfig.getY() + 1;
-            int maxSizeZ = maxSizeConfig.getZ() + 1;
-            
-            if (sizeX >= 2 && sizeY >= 2 && sizeZ >= 2 &&
-                sizeX <= maxSizeX && sizeY <= maxSizeY && sizeZ <= maxSizeZ) {
-                
-                Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
-                BlockPos origin = new BlockPos(minX, minY, minZ);
-                
-                PropertyMaterial.Type material = null;
-                boolean valid = true;
-                int coreCount = 0;
-                
+            if (valid && coreCount == 1 && material != null) {
                 for (int x = minX; x <= maxX; x++) {
                     for (int y = minY; y <= maxY; y++) {
                         for (int z = minZ; z <= maxZ; z++) {
@@ -145,90 +186,73 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                             IBlockState state = world.getBlockState(pos);
                             Block block = state.getBlock();
                             
-                            if (block == ColossalChest.getInstance()) {
-                                coreCount++;
-                                PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
-                                if (material == null) material = mat;
-                                else if (material != mat) valid = false;
-                            } else if (block instanceof ChestWall || block instanceof Interface) {
-                                PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
-                                if (material == null) material = mat;
-                                else if (material != mat) valid = false;
-                            } else {
-                                valid = false;
-                            }
-                        }
-                    }
-                }
-                
-                if (valid && coreCount == 1 && material != null) {
-                    for (int x = minX; x <= maxX; x++) {
-                        for (int y = minY; y <= maxY; y++) {
-                            for (int z = minZ; z <= maxZ; z++) {
-                                BlockPos pos = new BlockPos(x, y, z);
-                                IBlockState state = world.getBlockState(pos);
-                                Block block = state.getBlock();
+                            if (block == ColossalChest.getInstance() || 
+                                block instanceof ChestWall || 
+                                block instanceof Interface) {
                                 
-                                if (block == ColossalChest.getInstance() || 
-                                    block instanceof ChestWall || 
-                                    block instanceof Interface) {
-                                    
-                                    IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
-                                    if (block == ColossalChest.getInstance()) {
-                                        newState = newState.withProperty(ColossalChest.MATERIAL, material);
-                                    }
-                                    world.setBlockState(pos, newState, 3);
-                                    world.notifyBlockUpdate(pos, state, newState, 3);
-                                    
-                                    if (block == ColossalChest.getInstance()) {
-                                        TileColossalChest tile = (TileColossalChest) world.getTileEntity(pos);
-                                        if (tile != null) {
-                                            tile.setMaterial(material);
-                                            tile.setSize(size);
-                                            tile.setCenter(new Vec3d(
-                                                origin.getX() + ((double) size.getX()) / 2,
-                                                origin.getY() + ((double) size.getY()) / 2,
-                                                origin.getZ() + ((double) size.getZ()) / 2
-                                            ));
-                                            tile.addInterface(pos);
-                                        }
+                                IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
+                                if (block == ColossalChest.getInstance()) {
+                                    newState = newState.withProperty(ColossalChest.MATERIAL, material);
+                                }
+                                world.setBlockState(pos, newState, 3);
+                                world.notifyBlockUpdate(pos, state, newState, 3);
+                                
+                                if (block == ColossalChest.getInstance()) {
+                                    TileColossalChest tile = (TileColossalChest) world.getTileEntity(pos);
+                                    if (tile != null) {
+                                        tile.setMaterial(material);
+                                        tile.setSize(size);
+                                        tile.setCenter(new Vec3d(
+                                            origin.getX() + ((double) size.getX()) / 2,
+                                            origin.getY() + ((double) size.getY()) / 2,
+                                            origin.getZ() + ((double) size.getZ()) / 2
+                                        ));
+                                        tile.addInterface(pos);
                                     }
                                 }
                             }
                         }
                     }
-                    return true;
                 }
+                return true;
             }
-            
-            List<BlockPos> toClean = new ArrayList<>();
-            int maxSizeConfigInt = ColossalChestConfig.maxSize;
-            for (int dx = -maxSizeConfigInt; dx <= maxSizeConfigInt; dx++) {
-                for (int dy = -maxSizeConfigInt; dy <= maxSizeConfigInt; dy++) {
-                    for (int dz = -maxSizeConfigInt; dz <= maxSizeConfigInt; dz++) {
-                        BlockPos checkPos = center.add(dx, dy, dz);
-                        if (!world.isBlockLoaded(checkPos)) continue;
-                        IBlockState checkState = world.getBlockState(checkPos);
-                        Block checkBlock = checkState.getBlock();
-                        if (checkBlock instanceof ChestWall || 
-                            checkBlock instanceof Interface ||
-                            checkBlock == ColossalChest.getInstance()) {
-                            if (checkState.getValue(ColossalChest.ACTIVE)) {
-                                toClean.add(checkPos);
-                            }
+        }
+        
+        // 清理无效结构
+        cleanInvalidStructure(world, center, minX, minY, minZ, maxX, maxY, maxZ);
+        return false;
+    }
+    
+    // 新增：清理无效结构的辅助方法
+    private void cleanInvalidStructure(World world, BlockPos center, 
+                                        int minX, int minY, int minZ,
+                                        int maxX, int maxY, int maxZ) {
+        List<BlockPos> toClean = new ArrayList<>();
+        int maxSizeConfigInt = ColossalChestConfig.maxSize;
+        for (int dx = -maxSizeConfigInt; dx <= maxSizeConfigInt; dx++) {
+            for (int dy = -maxSizeConfigInt; dy <= maxSizeConfigInt; dy++) {
+                for (int dz = -maxSizeConfigInt; dz <= maxSizeConfigInt; dz++) {
+                    BlockPos checkPos = center.add(dx, dy, dz);
+                    if (!world.isBlockLoaded(checkPos)) continue;
+                    IBlockState checkState = world.getBlockState(checkPos);
+                    Block checkBlock = checkState.getBlock();
+                    if (checkBlock instanceof ChestWall || 
+                        checkBlock instanceof Interface ||
+                        checkBlock == ColossalChest.getInstance()) {
+                        if (checkState.getValue(ColossalChest.ACTIVE)) {
+                            toClean.add(checkPos);
                         }
                     }
                 }
             }
-            for (BlockPos pos : toClean) {
-                IBlockState state = world.getBlockState(pos);
-                world.setBlockState(pos, state.withProperty(ColossalChest.ACTIVE, false), 3);
-                world.notifyBlockUpdate(pos, state, state.withProperty(ColossalChest.ACTIVE, false), 3);
-            }
-            return false;
+        }
+        for (BlockPos pos : toClean) {
+            IBlockState state = world.getBlockState(pos);
+            world.setBlockState(pos, state.withProperty(ColossalChest.ACTIVE, false), 3);
+            world.notifyBlockUpdate(pos, state, state.withProperty(ColossalChest.ACTIVE, false), 3);
         }
     }
-    public static final Detector detector = new Detector();
+}
 
     // ========== 物品栏 ==========
     private ItemStackHandler inventory;
