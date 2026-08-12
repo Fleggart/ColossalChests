@@ -63,10 +63,6 @@ public class RenderTileEntityColossalChest extends RenderTileEntityModel<TileCol
 
     @Override
     protected void preRotate(TileColossalChest chestTile) {
-        // 关键修复：如果结构不完整，直接跳过所有渲染变换
-        if (!chestTile.isStructureComplete()) {
-            return;
-        }
         if(chestTile.isStructureComplete()) {
             Vec3d renderOffset = chestTile.getRenderOffset();
             GlStateManager.translate(-renderOffset.x, renderOffset.y, renderOffset.z);
@@ -78,42 +74,29 @@ public class RenderTileEntityColossalChest extends RenderTileEntityModel<TileCol
 
     @Override
     protected void postRotate(TileColossalChest tile) {
-        // 关键修复：如果结构不完整，跳过
-        if (!tile.isStructureComplete()) {
-            return;
-        }
         GlStateManager.translate(-0.5F, 0, -0.5F);
     }
 
     @Override
     protected void renderModel(TileColossalChest chestTile, ModelChest model, float partialTick, int destroyStage) {
-        // 关键修复：结构不完整时绝对不渲染任何模型
-        if (!chestTile.isStructureComplete()) {
-            return;
+        if(chestTile.isStructureComplete()) {
+            bindTexture(TEXTURES_CHEST.get(chestTile.getMaterial()));
+            GlStateManager.pushMatrix();
+            if (ColossalChestConfig.chestAnimation) {
+                float lidangle = chestTile.prevLidAngle + (chestTile.lidAngle - chestTile.prevLidAngle) * partialTick;
+                lidangle = 1.0F - lidangle;
+                lidangle = 1.0F - lidangle * lidangle * lidangle;
+                model.chestLid.rotateAngleX = -(lidangle * (float) Math.PI / 2.0F);
+            }
+            GlStateManager.translate(0, -0.0625F * 8, 0);
+            model.renderAll();
+            GlStateManager.popMatrix();
         }
-        
-        bindTexture(TEXTURES_CHEST.get(chestTile.getMaterial()));
-        GlStateManager.pushMatrix();
-        if (ColossalChestConfig.chestAnimation) {
-            float lidangle = chestTile.prevLidAngle + (chestTile.lidAngle - chestTile.prevLidAngle) * partialTick;
-            lidangle = 1.0F - lidangle;
-            lidangle = 1.0F - lidangle * lidangle * lidangle;
-            model.chestLid.rotateAngleX = -(lidangle * (float) Math.PI / 2.0F);
-        }
-        GlStateManager.translate(0, -0.0625F * 8, 0);
-        model.renderAll();
-        GlStateManager.popMatrix();
     }
 
     @Override
     public void render(TileColossalChest tile, double x, double y, double z, float partialTick, int destroyStage, float alpha) {
-        // 关键修复：如果结构不完整，完全跳过渲染，包括父类调用
-        if (!tile.isStructureComplete()) {
-            return;
-        }
-        
         super.render(tile, x, y, z, partialTick, destroyStage, alpha);
-        
         if(tile.isStructureComplete() && tile.lidAngle == 0 && (GeneralConfig.alwaysShowInterfaceOverlay || Minecraft.getMinecraft().player.isSneaking())) {
             GlStateManager.enableRescaleNormal();
             GlStateManager.alphaFunc(516, 0.1F);
@@ -147,10 +130,6 @@ public class RenderTileEntityColossalChest extends RenderTileEntityModel<TileCol
 
     @Override
     public boolean isGlobalRenderer(TileColossalChest tile) {
-        // 关键修复：如果结构不完整，不注册为全局渲染器，让系统可以正常销毁它
-        if (tile == null || !tile.isStructureComplete()) {
-            return false;
-        }
         return true;
     }
 
