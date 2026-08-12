@@ -24,7 +24,6 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.loot.ILootContainer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.ItemStackHandler;
@@ -44,7 +43,7 @@ import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
 import java.util.*;
 
-public class TileColossalChest extends CyclopsTileEntity implements IInventory, ISidedInventory, ITickable, ILootContainer {
+public class TileColossalChest extends CyclopsTileEntity implements IInventory, ISidedInventory, ITickable {
 
     private static final int TICK_MODULUS = 200;
 
@@ -784,10 +783,4 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         return isUsableByPlayer(player);
     }
 
-    //  ILootContainer 
-
-    @Override
-    public ResourceLocation getLootTable() {
-        return new ResourceLocation("dummy");
-    }
 }
