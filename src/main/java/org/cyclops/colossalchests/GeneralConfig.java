@@ -1,3 +1,4 @@
+
 package org.cyclops.colossalchests;
 
 import org.cyclops.cyclopscore.config.ConfigurableProperty;
@@ -6,7 +7,6 @@ import org.cyclops.cyclopscore.config.ConfigurableTypeCategory;
 import org.cyclops.cyclopscore.config.extendedconfig.DummyConfig;
 import org.cyclops.cyclopscore.init.ModBase;
 import org.cyclops.cyclopscore.tracking.Analytics;
-import org.cyclops.cyclopscore.tracking.Versions;
 
 /**
  * A config with general options for this mod.
@@ -21,12 +21,6 @@ public class GeneralConfig extends DummyConfig {
      */
     @ConfigurableProperty(category = ConfigurableTypeCategory.CORE, comment = "Config version for " + Reference.MOD_NAME +".\nDO NOT EDIT MANUALLY!", showInGui = false)
     public static String version = Reference.MOD_VERSION;
-
-    /**
-     * If the debug mode should be enabled. @see Debug
-     */
-    @ConfigurableProperty(category = ConfigurableTypeCategory.CORE, comment = "Set 'true' to enable development debug mode. This will result in a lower performance!", requiresMcRestart = true)
-    public static boolean debug = false;
 
     /**
      * If the recipe loader should crash when finding invalid recipes.
@@ -91,13 +85,11 @@ public class GeneralConfig extends DummyConfig {
     @Override
     public void onRegistered() {
         getMod().putGenericReference(ModBase.REFKEY_CRASH_ON_INVALID_RECIPE, GeneralConfig.crashOnInvalidRecipe);
-        getMod().putGenericReference(ModBase.REFKEY_DEBUGCONFIG, GeneralConfig.debug);
         getMod().putGenericReference(ModBase.REFKEY_CRASH_ON_MODCOMPAT_CRASH, GeneralConfig.crashOnModCompatCrash);
 
         if(analytics) {
             Analytics.registerMod(getMod(), Reference.GA_TRACKING_ID);
         }
-        // 移除 versionChecker 相关代码
     }
     
     @Override
