@@ -57,7 +57,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                        block instanceof Interface;
             };
             
-            // 扩展X正方向
+            // 扩展边界检测...
             while (true) {
                 BlockPos check = new BlockPos(maxX + 1, center.getY(), center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -68,7 +68,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 扩展Y正方向
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), maxY + 1, center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -79,7 +78,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 扩展Z正方向
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), center.getY(), maxZ + 1);
                 if (!world.isBlockLoaded(check)) break;
@@ -91,7 +89,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 }
             }
             
-            // 扩展X负方向
             while (true) {
                 BlockPos check = new BlockPos(minX - 1, center.getY(), center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -102,7 +99,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 扩展Y负方向
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), minY - 1, center.getZ());
                 if (!world.isBlockLoaded(check)) break;
@@ -113,7 +109,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     break;
                 }
             }
-            // 扩展Z负方向
             while (true) {
                 BlockPos check = new BlockPos(center.getX(), center.getY(), minZ - 1);
                 if (!world.isBlockLoaded(check)) break;
@@ -130,13 +125,11 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             int sizeZ = maxZ - minZ + 1;
             
             // ========== 限制：只能为立方体 (2x2x2 到 10x10x10) ==========
-            // 检查是否所有维度大小相等（必须是立方体）
             if (sizeX != sizeY || sizeY != sizeZ) {
                 cleanInvalidStructure(world, center);
                 return false;
             }
             
-            // 检查大小是否在 2 到 10 之间
             if (sizeX < 2 || sizeX > 10) {
                 cleanInvalidStructure(world, center);
                 return false;
@@ -157,7 +150,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 boolean valid = true;
                 int coreCount = 0;
                 
-                // 检查所有方块
                 for (int x = minX; x <= maxX; x++) {
                     for (int y = minY; y <= maxY; y++) {
                         for (int z = minZ; z <= maxZ; z++) {
@@ -181,7 +173,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                     }
                 }
                 
-                // 验证通过，激活结构
                 if (valid && coreCount == 1 && material != null) {
                     for (int x = minX; x <= maxX; x++) {
                         for (int y = minY; y <= maxY; y++) {
@@ -222,12 +213,10 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 }
             }
             
-            // 无效结构，清理
             cleanInvalidStructure(world, center);
             return false;
         }
         
-        // 清理无效结构
         private void cleanInvalidStructure(World world, BlockPos center) {
             List<BlockPos> toClean = new ArrayList<>();
             int maxSizeConfigInt = ColossalChestConfig.maxSize;
@@ -334,42 +323,23 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         if (isStructureComplete()) {
             this.modVersion = MOD_VERSION;
             
-            // 保存当前物品
+            // 保存旧物品栏
             ItemStackHandler oldInventory = this.inventory;
             
-            // 创建新物品栏
+            // 创建新物品栏（空的）
             this.inventory = constructInventory();
             
-            // 如果有旧物品栏且不为空，复制物品到新物品栏
+            // 从旧物品栏转移物品到新物品栏
             if (oldInventory != null && oldInventory.getSlots() > 0) {
                 int copySize = Math.min(oldInventory.getSlots(), this.inventory.getSlots());
                 for (int i = 0; i < copySize; i++) {
                     ItemStack stack = oldInventory.getStackInSlot(i);
                     if (!stack.isEmpty()) {
-                        // 检查目标位置是否已有物品
-                        ItemStack targetStack = this.inventory.getStackInSlot(i);
-                        if (targetStack.isEmpty()) {
-                            // 目标位置为空，直接放入
-                            this.inventory.setStackInSlot(i, stack.copy());
-                        } else if (ItemStack.areItemsEqual(stack, targetStack) && 
-                                  targetStack.getCount() + stack.getCount() <= targetStack.getMaxStackSize()) {
-                            // 物品相同且可以堆叠，合并
-                            targetStack.grow(stack.getCount());
-                            this.inventory.setStackInSlot(i, targetStack);
-                        } else {
-                            // 无法放入原位，尝试放入其他空位
-                            boolean placed = false;
-                            for (int j = 0; j < this.inventory.getSlots(); j++) {
-                                if (this.inventory.getStackInSlot(j).isEmpty()) {
-                                    this.inventory.setStackInSlot(j, stack.copy());
-                                    placed = true;
-                                    break;
-                                }
-                            }
-                            if (!placed) {
-                                // 没有空位，掉落物品
-                                dropItems(stack.copy());
-                            }
+                        // 尝试放入新物品栏
+                        ItemStack remaining = addItemToInventory(stack.copy());
+                        if (!remaining.isEmpty()) {
+                            // 放不下，掉落
+                            dropItems(remaining);
                         }
                     }
                 }
@@ -429,6 +399,42 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             world.spawnEntity(item);
         }
     }
+    
+    /**
+     * 尝试将物品添加到物品栏，返回无法添加的剩余物品
+     */
+    private ItemStack addItemToInventory(ItemStack stack) {
+        if (stack.isEmpty() || inventory == null) {
+            return stack;
+        }
+        
+        // 先尝试合并到现有物品
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            ItemStack existing = inventory.getStackInSlot(i);
+            if (!existing.isEmpty() && ItemStack.areItemsEqual(existing, stack) && 
+                ItemStack.areItemStackTagsEqual(existing, stack)) {
+                int space = existing.getMaxStackSize() - existing.getCount();
+                if (space > 0) {
+                    int move = Math.min(space, stack.getCount());
+                    existing.grow(move);
+                    stack.shrink(move);
+                    if (stack.isEmpty()) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            }
+        }
+        
+        // 放入空位
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            if (inventory.getStackInSlot(i).isEmpty()) {
+                inventory.setStackInSlot(i, stack.copy());
+                return ItemStack.EMPTY;
+            }
+        }
+        
+        return stack;
+    }
 
     public boolean isStructureComplete() {
         return !size.equals(Vec3i.NULL_VECTOR);
@@ -453,20 +459,7 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     private ItemStackHandler constructInventory() {
         int size = calculateInventorySize();
-        ItemStackHandler newInventory = new ItemStackHandler(size);
-        
-        // 如果当前有物品栏，保留物品
-        if (this.inventory != null) {
-            int copySize = Math.min(this.inventory.getSlots(), size);
-            for (int i = 0; i < copySize; i++) {
-                ItemStack stack = this.inventory.getStackInSlot(i);
-                if (!stack.isEmpty()) {
-                    newInventory.setStackInSlot(i, stack.copy());
-                }
-            }
-        }
-        
-        return newInventory;
+        return new ItemStackHandler(size);
     }
 
     private int calculateInventorySize() {
