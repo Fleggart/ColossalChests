@@ -3,7 +3,6 @@ package org.cyclops.colossalchests.tileentity;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
-import lombok.experimental.Delegate;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -16,9 +15,9 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.items.ItemStackHandler;
 import org.apache.commons.lang3.ArrayUtils;
 import org.cyclops.colossalchests.block.UncolossalChest;
-import org.cyclops.colossalchests.inventory.LegacySimpleInventory;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.cyclopscore.helper.BlockHelpers;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
@@ -29,36 +28,44 @@ import org.cyclops.cyclopscore.tileentity.InventoryTileEntity;
 
 import java.util.List;
 
-public class TileUncolossalChest extends InventoryTileEntity implements CyclopsTileEntity.ITickingTile {
+/**
+ * Tile entity for the Uncolossal Chest - a small chest that looks like a miniature colossal chest.
+ * 
+ * @author rubensworks
+ */
+public class TileUncolossalChest extends CyclopsTileEntity implements CyclopsTileEntity.ITickingTile {
 
     private static final int TICK_MODULUS = 200;
-
-    @Delegate
-    private final ITickingTile tickingTileComponent = new TickingTileComponent(this);
+    private static final int INVENTORY_SIZE = 5;
+    private static final int STACK_LIMIT = 64;
 
     @NBTPersist
     private String customName = null;
 
-    private LegacySimpleInventory customInventory;
+    // 直接使用 ItemStackHandler，不再需要 LegacySimpleInventory
+    private final ItemStackHandler inventory;
 
     public float prevLidAngle;
     public float lidAngle;
     private int playersUsing;
 
-    private Block block = UncolossalChest.getInstance();
+    private final Block block = UncolossalChest.getInstance();
 
     public TileUncolossalChest() {
-        super(5, "uncolossalChest", 64);
-        this.customInventory = new LegacySimpleInventory(5, "uncolossalChest", 64);
+        this.inventory = new ItemStackHandler(INVENTORY_SIZE) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                super.onContentsChanged(slot);
+                markDirty();
+            }
+        };
     }
+
+    // ===================== ITickingTile =====================
 
     @Override
     public void updateTileEntity() {
-        super.updateTileEntity();
-
-        if(world != null
-                && !this.world.isRemote
-                && this.playersUsing != 0
+        if (world != null && !this.world.isRemote && this.playersUsing != 0 
                 && WorldHelpers.efficientTick(world, TICK_MODULUS, getPos().hashCode())) {
             this.playersUsing = 0;
             float range = 5.0F;
@@ -71,7 +78,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
                     )
             );
 
-            for(EntityPlayer player : entities) {
+            for (EntityPlayer player : entities) {
                 if (player.openContainer instanceof ContainerColossalChest) {
                     ++this.playersUsing;
                 }
@@ -80,6 +87,7 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
             world.addBlockEvent(getPos(), block, 1, playersUsing);
         }
 
+        // 箱盖动画
         prevLidAngle = lidAngle;
         float increaseAngle = 0.25F;
         if (playersUsing > 0 && lidAngle == 0.0F) {
@@ -123,6 +131,132 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         }
     }
 
+    // ===================== 物品栏方法（直接委托给 ItemStackHandler） =====================
+
+    public int getSizeInventory() {
+        return inventory.getSlots();
+    }
+
+    public boolean isEmpty() {
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            if (!inventory.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public ItemStack getStackInSlot(int index) {
+        return inventory.getStackInSlot(index);
+    }
+
+    public ItemStack decrStackSize(int index, int count) {
+        ItemStack stack = inventory.getStackInSlot(index);
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack result = stack.splitStack(count);
+        if (stack.isEmpty()) {
+            inventory.setStackInSlot(index, ItemStack.EMPTY);
+        }
+        markDirty();
+        return result;
+    }
+
+    public ItemStack removeStackFromSlot(int index) {
+        ItemStack stack = inventory.getStackInSlot(index);
+        inventory.setStackInSlot(index, ItemStack.EMPTY);
+        markDirty();
+        return stack;
+    }
+
+    public void setInventorySlotContents(int index, ItemStack stack) {
+        inventory.setStackInSlot(index, stack);
+        markDirty();
+    }
+
+    public int getInventoryStackLimit() {
+        return STACK_LIMIT;
+    }
+
+    public boolean isUsableByPlayer(EntityPlayer player) {
+        return this.world.getTileEntity(this.pos) == this
+                && player.getDistanceSq((double) this.pos.getX() + 0.5D, 
+                                       (double) this.pos.getY() + 0.5D, 
+                                       (double) this.pos.getZ() + 0.5D) <= 64.0D;
+    }
+
+    public void openInventory(EntityPlayer player) {
+        if (!player.isSpectator()) {
+            triggerPlayerUsageChange(1);
+        }
+    }
+
+    public void closeInventory(EntityPlayer player) {
+        if (!player.isSpectator()) {
+            triggerPlayerUsageChange(-1);
+        }
+    }
+
+    public boolean isItemValidForSlot(int index, ItemStack stack) {
+        return true;
+    }
+
+    public int getField(int id) {
+        return 0;
+    }
+
+    public void setField(int id, int value) {}
+
+    public int getFieldCount() {
+        return 0;
+    }
+
+    public void clear() {
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            inventory.setStackInSlot(i, ItemStack.EMPTY);
+        }
+        markDirty();
+    }
+
+    // ===================== IWorldNameable =====================
+
+    public String getName() {
+        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.uncolossalchest.name");
+    }
+
+    public boolean hasCustomName() {
+        return customName != null && !customName.isEmpty();
+    }
+
+    public ITextComponent getDisplayName() {
+        return new TextComponentString(getName());
+    }
+
+    public void setCustomName(String name) {
+        this.customName = name;
+    }
+
+    // ===================== ISidedInventory =====================
+
+    public int[] getSlotsForFace(EnumFacing side) {
+        int size = getSizeInventory();
+        ContiguousSet<Integer> integers = ContiguousSet.create(
+                Range.closed(0, size - 1), DiscreteDomain.integers()
+        );
+        return ArrayUtils.toPrimitive(integers.toArray(new Integer[0]));
+    }
+
+    public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
+        return true;
+    }
+
+    public boolean canInsertItem(int index, ItemStack stack, EnumFacing direction) {
+        return true;
+    }
+
+    // ===================== 方块事件 =====================
+
     @Override
     public boolean receiveClientEvent(int i, int j) {
         if (i == 1) {
@@ -132,135 +266,30 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         return false;
     }
 
-    // ===================== 覆盖父类的 inventory 访问 =====================
-    
-    @Override
-    public int getSizeInventory() {
-        return customInventory.getSizeInventory();
-    }
+    // ===================== NBT =====================
 
-    @Override
-    public boolean isEmpty() {
-        return customInventory.isEmpty();
-    }
-
-    @Override
-    public ItemStack getStackInSlot(int index) {
-        return customInventory.getStackInSlot(index);
-    }
-
-    @Override
-    public ItemStack decrStackSize(int index, int count) {
-        return customInventory.decrStackSize(index, count);
-    }
-
-    @Override
-    public ItemStack removeStackFromSlot(int index) {
-        return customInventory.removeStackFromSlot(index);
-    }
-
-    @Override
-    public void setInventorySlotContents(int index, ItemStack stack) {
-        customInventory.setInventorySlotContents(index, stack);
-    }
-
-    @Override
-    public int getInventoryStackLimit() {
-        return customInventory.getInventoryStackLimit();
-    }
-
-    @Override
-    public void markDirty() {
-        customInventory.markDirty();
-    }
-
-    @Override
-    public boolean isUsableByPlayer(EntityPlayer player) {
-        return customInventory.isUsableByPlayer(player) 
-                && this.world.getTileEntity(this.pos) == this
-                && player.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
-    }
-
-    @Override
-    public void openInventory(EntityPlayer player) {
-        if (!player.isSpectator()) {
-            customInventory.openInventory(player);
-            triggerPlayerUsageChange(1);
-        }
-    }
-
-    @Override
-    public void closeInventory(EntityPlayer player) {
-        if (!player.isSpectator()) {
-            customInventory.closeInventory(player);
-            triggerPlayerUsageChange(-1);
-        }
-    }
-
-    @Override
-    public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return customInventory.isItemValidForSlot(index, stack);
-    }
-
-    @Override
-    public int getField(int id) {
-        return customInventory.getField(id);
-    }
-
-    @Override
-    public void setField(int id, int value) {
-        customInventory.setField(id, value);
-    }
-
-    @Override
-    public int getFieldCount() {
-        return customInventory.getFieldCount();
-    }
-
-    @Override
-    public void clear() {
-        for (int i = 0; i < customInventory.getSizeInventory(); i++) {
-            customInventory.setInventorySlotContents(i, ItemStack.EMPTY);
-        }
-    }
-
-    @Override
-    public String getName() {
-        return hasCustomName() ? customName : L10NHelpers.localize("general.colossalchests.uncolossalchest.name");
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return customName != null && !customName.isEmpty();
-    }
-
-    @Override
-    public ITextComponent getDisplayName() {
-        return new TextComponentString(getName());
-    }
-
-    // ===================== 覆盖父类的 NBT 方法 =====================
     @Override
     public void readFromNBT(NBTTagCompound tag) {
         super.readFromNBT(tag);
-        if (tag.hasKey("customInventory")) {
-            customInventory = new LegacySimpleInventory(5, "uncolossalChest", 64);
-            customInventory.readFromNBT(tag.getCompoundTag("customInventory"));
+        if (tag.hasKey("inventory")) {
+            inventory.deserializeNBT(tag.getCompoundTag("inventory"));
+        }
+        if (tag.hasKey("customName")) {
+            customName = tag.getString("customName");
         }
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound tag) {
         tag = super.writeToNBT(tag);
-        if (customInventory != null) {
-            NBTTagCompound invTag = new NBTTagCompound();
-            customInventory.writeToNBT(invTag);
-            tag.setTag("customInventory", invTag);
+        tag.setTag("inventory", inventory.serializeNBT());
+        if (customName != null && !customName.isEmpty()) {
+            tag.setString("customName", customName);
         }
         return tag;
     }
 
-    // ===================== 其他方法 =====================
+    // ===================== 辅助方法 =====================
 
     private void triggerPlayerUsageChange(int change) {
         if (world != null) {
@@ -269,33 +298,20 @@ public class TileUncolossalChest extends InventoryTileEntity implements CyclopsT
         }
     }
 
-    @Override
-    public int[] getSlotsForFace(EnumFacing side) {
-        int size = getSizeInventory();
-        ContiguousSet<Integer> integers = ContiguousSet.create(
-                Range.closed(0, size - 1), DiscreteDomain.integers()
-        );
-        return ArrayUtils.toPrimitive(integers.toArray(new Integer[integers.size()]));
-    }
-
-    @Override
-    public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
-        return true;
-    }
-
-    @Override
-    public boolean canInsertItem(int index, ItemStack stack, EnumFacing direction) {
-        return true;
-    }
-
-    public void setCustomName(String name) {
-        this.customName = name;
-    }
-
-    @Override
     public EnumFacing getRotation() {
         IBlockState blockState = getWorld().getBlockState(getPos());
-        if(blockState.getBlock() != UncolossalChest.getInstance()) return EnumFacing.NORTH;
+        if (blockState.getBlock() != UncolossalChest.getInstance()) {
+            return EnumFacing.NORTH;
+        }
         return BlockHelpers.getSafeBlockStateProperty(blockState, UncolossalChest.FACING, EnumFacing.NORTH);
+    }
+
+    // ===================== 标记脏数据 =====================
+
+    @Override
+    public void markDirty() {
+        super.markDirty();
+        // ItemStackHandler 的 onContentsChanged 已经调用了 markDirty
+        // 但为了安全，这里也保留
     }
 }
