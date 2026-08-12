@@ -30,7 +30,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.tuple.Pair;
-// 移除: import org.cyclops.colossalchests.Advancements;
 import org.cyclops.colossalchests.client.gui.container.GuiColossalChest;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.colossalchests.tileentity.TileColossalChest;
@@ -116,26 +115,18 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         return BlockRenderLayer.CUTOUT_MIPPED;
     }
 
-    /**
-     * 接收客户端事件（箱子开合动画和音效）
-     * 注意：不要加 @Override，因为父类 ConfigurableBlockContainerGui 没有这个方法
-     * 但 Minecraft Block 类有这个方法，运行时会被正确调用
-     */
+    @Override
     public boolean eventReceived(IBlockState state, World worldIn, BlockPos pos, int id, int param) {
         TileEntity tileentity = worldIn.getTileEntity(pos);
         return tileentity != null && tileentity.receiveClientEvent(id, param);
     }
 
     public static boolean triggerDetector(World world, BlockPos blockPos, boolean valid, @Nullable EntityPlayer player) {
-        // 防止传入 null 导致崩溃
         if (world == null || blockPos == null) {
             return false;
         }
         
-        boolean result = TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
-        // 移除成就触发
-        // if (player instanceof EntityPlayerMP && result) { ... Advancements.CHEST_FORMED.trigger(...) ... }
-        return result;
+        return TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
     }
 
     @Override
@@ -154,13 +145,13 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     @Override
     public void onBlockAdded(World world, BlockPos blockPos, IBlockState blockState) {
         super.onBlockAdded(world, blockPos, blockState);
+        // 移除多余的检查，直接触发检测
         triggerDetector(world, blockPos, true, null);
     }
 
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState state) {
         if (state.getValue(ACTIVE)) {
-            // 强制重置核心方块状态
             world.setBlockState(pos, state.withProperty(ACTIVE, false), 
                     MinecraftHelpers.BLOCK_NOTIFY_CLIENT);
             
@@ -182,7 +173,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
           IBlockState currentState = world.getBlockState(location);
           IBlockState newState = currentState.withProperty(ACTIVE, valid);
         
-          // 使用 Flag = 3（BLOCK_NOTIFY_ALL），强制同步客户端并重新渲染
           world.setBlockState(location, newState, 3);
           world.notifyBlockUpdate(location, currentState, newState, 3);
         
