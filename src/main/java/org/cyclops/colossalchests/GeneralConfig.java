@@ -53,11 +53,6 @@ public class GeneralConfig extends DummyConfig {
     public GeneralConfig() {
         super(ColossalChests._instance, true, "general", null, GeneralConfig.class);
     }
-
-    @Override
-    public void onRegistered() {
-        // 移除所有 putGenericReference 和 Analytics 调用
-    }
     
     @Override
     public boolean isEnabled() {
