@@ -1,6 +1,6 @@
 package org.cyclops.colossalchests.client.render.tileentity;
 
-import com.google.common.collect.Maps;
+import java.util.HashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelChest;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -31,8 +31,8 @@ import java.util.Map;
  */
 public class RenderTileEntityColossalChest extends RenderTileEntityModel<TileColossalChest, ModelChest> {
 
-    public static final Map<PropertyMaterial.Type, ResourceLocation> TEXTURES_CHEST = Maps.newHashMap();
-    public static final Map<PropertyMaterial.Type, ResourceLocation> TEXTURES_INTERFACE = Maps.newHashMap();
+    public static final Map<PropertyMaterial.Type, ResourceLocation> TEXTURES_CHEST = new HashMap<>();
+    public static final Map<PropertyMaterial.Type, ResourceLocation> TEXTURES_INTERFACE = new HashMap<>();
     static {
         Calendar calendar = Calendar.getInstance();
         boolean christmas = calendar.get(Calendar.MONTH) + 1 == 12 && calendar.get(Calendar.DATE) >= 24 && calendar.get(Calendar.DATE) <= 26;
