@@ -37,12 +37,6 @@ public class GeneralConfig extends DummyConfig {
     public static boolean alwaysShowInterfaceOverlay = true;
 
     /**
-     * Always create full creative-mode chests when formed. Should not be used in survival worlds!
-     */
-    @ConfigurableProperty(category = ConfigurableTypeCategory.GENERAL, comment = "Always create full creative-mode chests when formed. Should not be used in survival worlds!", isCommandable = true)
-    public static boolean creativeChests = false;
-
-    /**
      * The type of this config.
      */
     public static ConfigurableType TYPE = ConfigurableType.DUMMY;
