@@ -8,15 +8,15 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.items.ItemStackHandler;
 
+/**
+ * Simple inventory wrapper for ItemStackHandler.
+ * Used by TileUncolossalChest.
+ */
 public class LegacySimpleInventory implements IInventory {
 
-    private ItemStackHandler handler;
-    private String name;
-    private int stackLimit;
-
-    public LegacySimpleInventory() {
-        this(0, "inventory", 64);
-    }
+    private final ItemStackHandler handler;
+    private final String name;
+    private final int stackLimit;
 
     public LegacySimpleInventory(int size, String name, int stackLimit) {
         this.handler = new ItemStackHandler(size);
@@ -53,8 +53,6 @@ public class LegacySimpleInventory implements IInventory {
         ItemStack result = stack.splitStack(count);
         if (stack.isEmpty()) {
             handler.setStackInSlot(index, ItemStack.EMPTY);
-        } else {
-            handler.setStackInSlot(index, stack);
         }
         return result;
     }
@@ -130,15 +128,6 @@ public class LegacySimpleInventory implements IInventory {
         return new TextComponentString(getName());
     }
 
-    // ===== NBT 方法 =====
-    public NBTTagCompound serializeNBT() {
-        return handler.serializeNBT();
-    }
-
-    public void deserializeNBT(NBTTagCompound nbt) {
-        handler.deserializeNBT(nbt);
-    }
-
     public void writeToNBT(NBTTagCompound nbt) {
         nbt.setTag("inventory", handler.serializeNBT());
     }
@@ -149,29 +138,7 @@ public class LegacySimpleInventory implements IInventory {
         }
     }
 
-    // ===== Convenience methods =====
     public int getSlots() {
         return handler.getSlots();
-    }
-
-    public void setStackInSlot(int index, ItemStack stack) {
-        handler.setStackInSlot(index, stack);
-    }
-
-    public void setItem(int index, ItemStack stack) {
-        handler.setStackInSlot(index, stack);
-    }
-
-    public ItemStack getItem(int index) {
-        return handler.getStackInSlot(index);
-    }
-
-    public void setSize(int size) {
-        ItemStackHandler newHandler = new ItemStackHandler(size);
-        int copySize = Math.min(size, handler.getSlots());
-        for (int i = 0; i < copySize; i++) {
-            newHandler.setStackInSlot(i, handler.getStackInSlot(i));
-        }
-        this.handler = newHandler;
     }
 }
