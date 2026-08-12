@@ -47,12 +47,6 @@ public class GeneralConfig extends DummyConfig {
     public static boolean analytics = true;
 
     /**
-     * If the version checker should be enabled.
-     */
-    @ConfigurableProperty(category = ConfigurableTypeCategory.CORE, comment = "If the version checker should be enabled.")
-    public static boolean versionChecker = true;
-
-    /**
      * If items should be ejected from the chests if one of the structure blocks are removed.
      */
     @ConfigurableProperty(category = ConfigurableTypeCategory.GENERAL, comment = "If items should be ejected from the chests if one of the structure blocks are removed.")
@@ -103,9 +97,7 @@ public class GeneralConfig extends DummyConfig {
         if(analytics) {
             Analytics.registerMod(getMod(), Reference.GA_TRACKING_ID);
         }
-        if(versionChecker) {
-            Versions.registerMod(getMod(), ColossalChests._instance, Reference.VERSION_URL);
-        }
+        // 移除 versionChecker 相关代码
     }
     
     @Override
