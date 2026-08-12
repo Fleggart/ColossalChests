@@ -120,13 +120,11 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
             boolean currentActive = currentState.getValue(ACTIVE);
             IBlockState newState = currentState.withProperty(ACTIVE, valid);
             
-            // 使用 Flag = 3（BLOCK_NOTIFY_ALL），强制同步客户端并重新渲染
             world.setBlockState(location, newState, 3);
             world.notifyBlockUpdate(location, currentState, newState, 3);
             
-            if (currentActive != valid) {
-                TileColossalChest.detectStructure(world, location, size, valid, originCorner);
-            }
+            // 移除 TileColossalChest.detectStructure 调用，因为该方法已被删除
+            // 结构检测逻辑现在由 ColossalChest.triggerDetector 统一处理
         }
     }
 
@@ -152,7 +150,6 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, 
                                             float hitX, float hitY, float hitZ, 
                                             int meta, EntityLivingBase placer, EnumHand hand) {
-        // 强制返回非活跃状态，避免新方块继承错误状态
         IBlockState state = super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer, hand);
         return state.withProperty(ACTIVE, false);
     }
