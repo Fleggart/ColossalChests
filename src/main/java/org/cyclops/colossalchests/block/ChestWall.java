@@ -117,14 +117,10 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
         Block block = world.getBlockState(location).getBlock();
         if (block == this) {
             IBlockState currentState = world.getBlockState(location);
-            boolean currentActive = currentState.getValue(ACTIVE);
             IBlockState newState = currentState.withProperty(ACTIVE, valid);
             
             world.setBlockState(location, newState, 3);
             world.notifyBlockUpdate(location, currentState, newState, 3);
-            
-            // 移除 TileColossalChest.detectStructure 调用，因为该方法已被删除
-            // 结构检测逻辑现在由 ColossalChest.triggerDetector 统一处理
         }
     }
 
