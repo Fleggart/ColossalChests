@@ -12,7 +12,6 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -29,7 +28,6 @@ import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.commons.lang3.tuple.Pair;
 import org.cyclops.colossalchests.client.gui.container.GuiColossalChest;
 import org.cyclops.colossalchests.inventory.container.ContainerColossalChest;
 import org.cyclops.colossalchests.tileentity.TileColossalChest;
@@ -43,8 +41,6 @@ import org.cyclops.cyclopscore.datastructure.Wrapper;
 import org.cyclops.cyclopscore.helper.*;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ColossalChest extends ConfigurableBlockContainerGui implements CubeDetector.IDetectionListener {
 
@@ -125,7 +121,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         if (world == null || blockPos == null) {
             return false;
         }
-        
         return TileColossalChest.detector.detect(world, blockPos, valid ? null : blockPos, new MaterialValidationAction(), true);
     }
 
@@ -145,7 +140,6 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     @Override
     public void onBlockAdded(World world, BlockPos blockPos, IBlockState blockState) {
         super.onBlockAdded(world, blockPos, blockState);
-        // 移除多余的检查，直接触发检测
         triggerDetector(world, blockPos, true, null);
     }
 
@@ -168,32 +162,32 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
     @Override
     public void onDetect(World world, BlockPos location, Vec3i size, boolean valid, BlockPos originCorner) {
-       Block block = world.getBlockState(location).getBlock();
-       if (block == this) {
-          IBlockState currentState = world.getBlockState(location);
-          IBlockState newState = currentState.withProperty(ACTIVE, valid);
-        
-          world.setBlockState(location, newState, 3);
-          world.notifyBlockUpdate(location, currentState, newState, 3);
-        
-          TileColossalChest tile = TileHelpers.getSafeTile(world, location, TileColossalChest.class);
-          if (tile != null) {
-             tile.setMaterial(BlockHelpers.getSafeBlockStateProperty(
-                    world.getBlockState(location), ColossalChest.MATERIAL, PropertyMaterial.Type.WOOD));
-             tile.setSize(valid ? size : Vec3i.NULL_VECTOR);
-             tile.setCenter(new Vec3d(
-                    originCorner.getX() + ((double) size.getX()) / 2,
-                    originCorner.getY() + ((double) size.getY()) / 2,
-                    originCorner.getZ() + ((double) size.getZ()) / 2
-             ));
-             if (valid) {
-                tile.addInterface(location);
-             } else {
-                tile.removeInterface(location);
+        Block block = world.getBlockState(location).getBlock();
+        if (block == this) {
+            IBlockState currentState = world.getBlockState(location);
+            IBlockState newState = currentState.withProperty(ACTIVE, valid);
+            
+            world.setBlockState(location, newState, 3);
+            world.notifyBlockUpdate(location, currentState, newState, 3);
+            
+            TileColossalChest tile = TileHelpers.getSafeTile(world, location, TileColossalChest.class);
+            if (tile != null) {
+                tile.setMaterial(BlockHelpers.getSafeBlockStateProperty(
+                        world.getBlockState(location), ColossalChest.MATERIAL, PropertyMaterial.Type.WOOD));
+                tile.setSize(valid ? size : Vec3i.NULL_VECTOR);
+                tile.setCenter(new Vec3d(
+                        originCorner.getX() + ((double) size.getX()) / 2,
+                        originCorner.getY() + ((double) size.getY()) / 2,
+                        originCorner.getZ() + ((double) size.getZ()) / 2
+                ));
+                if (valid) {
+                    tile.addInterface(location);
+                } else {
+                    tile.removeInterface(location);
+                }
             }
         }
     }
- }
 
     @Override
     public Class<? extends Container> getContainer() {
@@ -233,12 +227,12 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
         ITextComponent chat = new TextComponentString("");
         ITextComponent prefix = new TextComponentString(
                 String.format("[%s]: ", L10NHelpers.localize("multiblock.colossalchests.error.prefix"))
-        ).setStyle(new Style().
-                        setColor(TextFormatting.GRAY).
-                        setHoverEvent(new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                new TextComponentTranslation("multiblock.colossalchests.error.prefix.info")
-                        ))
+        ).setStyle(new Style()
+                .setColor(TextFormatting.GRAY)
+                .setHoverEvent(new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new TextComponentTranslation("multiblock.colossalchests.error.prefix.info")
+                ))
         );
         ITextComponent error = new TextComponentString(unlocalizedError.localize());
         chat.appendSibling(prefix);
@@ -274,7 +268,7 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
     @Override
     public boolean onBlockActivated(World world, BlockPos blockPos, IBlockState blockState, EntityPlayer player, EnumHand hand, EnumFacing side, float par7, float par8, float par9) {
-        if(!(blockState.getValue(ACTIVE))) {
+        if(!blockState.getValue(ACTIVE)) {
             ColossalChest.addPlayerChatError(world, blockPos, player, hand);
             return false;
         }
@@ -318,8 +312,8 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
 
         @Override
         public L10NHelpers.UnlocalizedString onValidate(BlockPos blockPos, IBlockState blockState) {
-            PropertyMaterial.Type material = BlockHelpers.
-                    getSafeBlockStateProperty(blockState, ColossalChest.MATERIAL, null);
+            PropertyMaterial.Type material = BlockHelpers
+                    .getSafeBlockStateProperty(blockState, ColossalChest.MATERIAL, null);
             if(requiredMaterial.get() == null) {
                 requiredMaterial.set(material);
                 return null;
