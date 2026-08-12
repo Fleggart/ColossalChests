@@ -38,8 +38,21 @@ import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 
 import java.util.*;
 
+/**
+ * Tile entity for the Colossal Chest multiblock structure.
+ * 
+ * Maximum chest size is hardcoded to 10x10x10 for performance reasons:
+ * - 10x10x10 = 1000 blocks = up to 27,000 inventory slots
+ * - Larger sizes cause severe network and rendering lag
+ * - This limit is not configurable to prevent player-induced performance issues
+ * 
+ * @author rubensworks
+ */
 public class TileColossalChest extends CyclopsTileEntity implements IInventory, ISidedInventory, ITickable {
 
+    // ========== 硬编码尺寸限制 ==========
+    private static final int MIN_CHEST_SIZE = 2;
+    private static final int MAX_CHEST_SIZE = 10;
     private static final int TICK_MODULUS = 200;
 
     // ========== 结构检测器 ==========
@@ -130,26 +143,43 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 return false;
             }
             
-            if (sizeX < 2 || sizeX > 10) {
+            if (sizeX < MIN_CHEST_SIZE || sizeX > MAX_CHEST_SIZE) {
                 cleanInvalidStructure(world, center);
                 return false;
             }
             // ========== 立方体限制结束 ==========
             
-            Vec3i maxSizeConfig = getMaxSize();
-            int maxSizeX = maxSizeConfig.getX() + 1;
-            int maxSizeY = maxSizeConfig.getY() + 1;
-            int maxSizeZ = maxSizeConfig.getZ() + 1;
+            Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
+            BlockPos origin = new BlockPos(minX, minY, minZ);
             
-            if (sizeX <= maxSizeX && sizeY <= maxSizeY && sizeZ <= maxSizeZ) {
-                
-                Vec3i size = new Vec3i(sizeX - 1, sizeY - 1, sizeZ - 1);
-                BlockPos origin = new BlockPos(minX, minY, minZ);
-                
-                PropertyMaterial.Type material = null;
-                boolean valid = true;
-                int coreCount = 0;
-                
+            PropertyMaterial.Type material = null;
+            boolean valid = true;
+            int coreCount = 0;
+            
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        BlockPos pos = new BlockPos(x, y, z);
+                        IBlockState state = world.getBlockState(pos);
+                        Block block = state.getBlock();
+                        
+                        if (block == ColossalChest.getInstance()) {
+                            coreCount++;
+                            PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
+                            if (material == null) material = mat;
+                            else if (material != mat) valid = false;
+                        } else if (block instanceof ChestWall || block instanceof Interface) {
+                            PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
+                            if (material == null) material = mat;
+                            else if (material != mat) valid = false;
+                        } else {
+                            valid = false;
+                        }
+                    }
+                }
+            }
+            
+            if (valid && coreCount == 1 && material != null) {
                 for (int x = minX; x <= maxX; x++) {
                     for (int y = minY; y <= maxY; y++) {
                         for (int z = minZ; z <= maxZ; z++) {
@@ -157,60 +187,35 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                             IBlockState state = world.getBlockState(pos);
                             Block block = state.getBlock();
                             
-                            if (block == ColossalChest.getInstance()) {
-                                coreCount++;
-                                PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
-                                if (material == null) material = mat;
-                                else if (material != mat) valid = false;
-                            } else if (block instanceof ChestWall || block instanceof Interface) {
-                                PropertyMaterial.Type mat = state.getValue(ColossalChest.MATERIAL);
-                                if (material == null) material = mat;
-                                else if (material != mat) valid = false;
-                            } else {
-                                valid = false;
-                            }
-                        }
-                    }
-                }
-                
-                if (valid && coreCount == 1 && material != null) {
-                    for (int x = minX; x <= maxX; x++) {
-                        for (int y = minY; y <= maxY; y++) {
-                            for (int z = minZ; z <= maxZ; z++) {
-                                BlockPos pos = new BlockPos(x, y, z);
-                                IBlockState state = world.getBlockState(pos);
-                                Block block = state.getBlock();
+                            if (block == ColossalChest.getInstance() || 
+                                block instanceof ChestWall || 
+                                block instanceof Interface) {
                                 
-                                if (block == ColossalChest.getInstance() || 
-                                    block instanceof ChestWall || 
-                                    block instanceof Interface) {
-                                    
-                                    IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
-                                    if (block == ColossalChest.getInstance()) {
-                                        newState = newState.withProperty(ColossalChest.MATERIAL, material);
-                                    }
-                                    world.setBlockState(pos, newState, 3);
-                                    world.notifyBlockUpdate(pos, state, newState, 3);
-                                    
-                                    if (block == ColossalChest.getInstance()) {
-                                        TileColossalChest tile = (TileColossalChest) world.getTileEntity(pos);
-                                        if (tile != null) {
-                                            tile.setMaterial(material);
-                                            tile.setSize(size);
-                                            tile.setCenter(new Vec3d(
-                                                origin.getX() + ((double) size.getX()) / 2,
-                                                origin.getY() + ((double) size.getY()) / 2,
-                                                origin.getZ() + ((double) size.getZ()) / 2
-                                            ));
-                                            tile.addInterface(pos);
-                                        }
+                                IBlockState newState = state.withProperty(ColossalChest.ACTIVE, true);
+                                if (block == ColossalChest.getInstance()) {
+                                    newState = newState.withProperty(ColossalChest.MATERIAL, material);
+                                }
+                                world.setBlockState(pos, newState, 3);
+                                world.notifyBlockUpdate(pos, state, newState, 3);
+                                
+                                if (block == ColossalChest.getInstance()) {
+                                    TileColossalChest tile = (TileColossalChest) world.getTileEntity(pos);
+                                    if (tile != null) {
+                                        tile.setMaterial(material);
+                                        tile.setSize(size);
+                                        tile.setCenter(new Vec3d(
+                                            origin.getX() + ((double) size.getX()) / 2,
+                                            origin.getY() + ((double) size.getY()) / 2,
+                                            origin.getZ() + ((double) size.getZ()) / 2
+                                        ));
+                                        tile.addInterface(pos);
                                     }
                                 }
                             }
                         }
                     }
-                    return true;
                 }
+                return true;
             }
             
             cleanInvalidStructure(world, center);
@@ -219,10 +224,9 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         
         private void cleanInvalidStructure(World world, BlockPos center) {
             List<BlockPos> toClean = new ArrayList<>();
-            int maxSizeConfigInt = ColossalChestConfig.maxSize;
-            for (int dx = -maxSizeConfigInt; dx <= maxSizeConfigInt; dx++) {
-                for (int dy = -maxSizeConfigInt; dy <= maxSizeConfigInt; dy++) {
-                    for (int dz = -maxSizeConfigInt; dz <= maxSizeConfigInt; dz++) {
+            for (int dx = -MAX_CHEST_SIZE; dx <= MAX_CHEST_SIZE; dx++) {
+                for (int dy = -MAX_CHEST_SIZE; dy <= MAX_CHEST_SIZE; dy++) {
+                    for (int dz = -MAX_CHEST_SIZE; dz <= MAX_CHEST_SIZE; dz++) {
                         BlockPos checkPos = center.add(dx, dy, dz);
                         if (!world.isBlockLoaded(checkPos)) continue;
                         IBlockState checkState = world.getBlockState(checkPos);
@@ -285,12 +289,28 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                 int dy = currentSize.getY() / 2;
                 int dz = currentSize.getZ() / 2;
                 
-                if (currentSize.getX() % 2 == 0) dx = currentSize.getX() / 2;
-                if (currentSize.getY() % 2 == 0) dy = currentSize.getY() / 2;
-                if (currentSize.getZ() % 2 == 0) dz = currentSize.getZ() / 2;
+                // 如果尺寸是偶数，中心点偏移需要调整
+                // 例如 2x2x2 的中心在 (0.5, 0.5, 0.5)
+                // 但这里我们直接用整数除法，会向下取整，所以对于偶数尺寸需要额外处理
+                // 但 unformStructure 的目的是清理所有激活的方块，范围稍微大一点也没关系
+                // 所以这里不做精确调整，直接使用 floor 值，确保覆盖所有可能的位置
                 
                 BlockPos minPos = center.add(-dx, -dy, -dz);
                 BlockPos maxPos = center.add(dx, dy, dz);
+                
+                // 对于偶数尺寸，需要额外偏移一个单位以确保覆盖完整
+                if (currentSize.getX() % 2 == 0) {
+                    minPos = minPos.add(0, 0, 0);
+                    maxPos = maxPos.add(1, 1, 1);
+                }
+                if (currentSize.getY() % 2 == 0) {
+                    minPos = minPos.add(0, 0, 0);
+                    maxPos = maxPos.add(1, 1, 1);
+                }
+                if (currentSize.getZ() % 2 == 0) {
+                    minPos = minPos.add(0, 0, 0);
+                    maxPos = maxPos.add(1, 1, 1);
+                }
                 
                 for (BlockPos pos : BlockPos.getAllInBox(minPos, maxPos)) {
                     IBlockState state = world.getBlockState(pos);
@@ -438,11 +458,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     public boolean isStructureComplete() {
         return !size.equals(Vec3i.NULL_VECTOR);
-    }
-
-    public static Vec3i getMaxSize() {
-        int size = ColossalChestConfig.maxSize;
-        return new Vec3i(size, size, size);
     }
 
     public int getSizeSingular() {
@@ -791,32 +806,6 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
     }
 
     // ===================== 网络 =====================
-
-    @Override
-    public NBTTagCompound getUpdateTag() {
-        return writeToNBT(new NBTTagCompound());
-    }
-
-    @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(pos, 1, getUpdateTag());
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        readFromNBT(pkt.getNbtCompound());
-    }
-
-    @Override
-    public boolean receiveClientEvent(int id, int type) {
-        if (id == 1) {
-            playersUsing = type;
-            return true;
-        }
-        return super.receiveClientEvent(id, type);
-    }
-
-    // ===================== 渲染 =====================
 
     public Vec3d getRenderOffset() {
         return renderOffset;
