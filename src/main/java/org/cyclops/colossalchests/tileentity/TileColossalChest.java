@@ -333,21 +333,50 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
         facingSlots.clear();
         if (isStructureComplete()) {
             this.modVersion = MOD_VERSION;
+            
+            // 保存当前物品
+            ItemStackHandler oldInventory = this.inventory;
+            
+            // 创建新物品栏
             this.inventory = constructInventory();
-
-            if (this.lastValidInventory != null) {
-                int slot = 0;
-                while (slot < Math.min(this.lastValidInventory.getSlots(), this.inventory.getSlots())) {
-                    ItemStack contents = this.lastValidInventory.getStackInSlot(slot);
-                    if (!contents.isEmpty()) {
-                        this.inventory.setStackInSlot(slot, contents);
-                        this.lastValidInventory.setStackInSlot(slot, ItemStack.EMPTY);
+            
+            // 如果有旧物品栏且不为空，复制物品到新物品栏
+            if (oldInventory != null && oldInventory.getSlots() > 0) {
+                int copySize = Math.min(oldInventory.getSlots(), this.inventory.getSlots());
+                for (int i = 0; i < copySize; i++) {
+                    ItemStack stack = oldInventory.getStackInSlot(i);
+                    if (!stack.isEmpty()) {
+                        // 检查目标位置是否已有物品
+                        ItemStack targetStack = this.inventory.getStackInSlot(i);
+                        if (targetStack.isEmpty()) {
+                            // 目标位置为空，直接放入
+                            this.inventory.setStackInSlot(i, stack.copy());
+                        } else if (ItemStack.areItemsEqual(stack, targetStack) && 
+                                  targetStack.getCount() + stack.getCount() <= targetStack.getMaxStackSize()) {
+                            // 物品相同且可以堆叠，合并
+                            targetStack.grow(stack.getCount());
+                            this.inventory.setStackInSlot(i, targetStack);
+                        } else {
+                            // 无法放入原位，尝试放入其他空位
+                            boolean placed = false;
+                            for (int j = 0; j < this.inventory.getSlots(); j++) {
+                                if (this.inventory.getStackInSlot(j).isEmpty()) {
+                                    this.inventory.setStackInSlot(j, stack.copy());
+                                    placed = true;
+                                    break;
+                                }
+                            }
+                            if (!placed) {
+                                // 没有空位，掉落物品
+                                dropItems(stack.copy());
+                            }
+                        }
                     }
-                    slot++;
                 }
-                if (slot < this.lastValidInventory.getSlots()) {
-                    dropItems(this.lastValidInventory);
-                }
+            }
+            
+            // 清理 lastValidInventory
+            if (this.lastValidInventory != null) {
                 this.lastValidInventory = null;
             }
         } else {
@@ -364,12 +393,13 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
             if (this.inventory != null) {
                 if (GeneralConfig.ejectItemsOnDestroy) {
                     dropItems(this.inventory);
+                    this.inventory = new ItemStackHandler(0);
                     this.lastValidInventory = null;
                 } else {
                     this.lastValidInventory = this.inventory;
+                    this.inventory = new ItemStackHandler(0);
                 }
             }
-            this.inventory = new ItemStackHandler(0);
         }
         markDirty();
         if (world != null && !world.isRemote) {
@@ -387,6 +417,16 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
                         world, getPos().getX(), getPos().getY(), getPos().getZ(), stack);
                 world.spawnEntity(item);
             }
+        }
+    }
+    
+    private void dropItems(ItemStack stack) {
+        World world = getWorld();
+        if (world == null || world.isRemote) return;
+        if (!stack.isEmpty()) {
+            net.minecraft.entity.item.EntityItem item = new net.minecraft.entity.item.EntityItem(
+                    world, getPos().getX(), getPos().getY(), getPos().getZ(), stack);
+            world.spawnEntity(item);
         }
     }
 
@@ -413,7 +453,20 @@ public class TileColossalChest extends CyclopsTileEntity implements IInventory, 
 
     private ItemStackHandler constructInventory() {
         int size = calculateInventorySize();
-        return new ItemStackHandler(size);
+        ItemStackHandler newInventory = new ItemStackHandler(size);
+        
+        // 如果当前有物品栏，保留物品
+        if (this.inventory != null) {
+            int copySize = Math.min(this.inventory.getSlots(), size);
+            for (int i = 0; i < copySize; i++) {
+                ItemStack stack = this.inventory.getStackInSlot(i);
+                if (!stack.isEmpty()) {
+                    newInventory.setStackInSlot(i, stack.copy());
+                }
+            }
+        }
+        
+        return newInventory;
     }
 
     private int calculateInventorySize() {
