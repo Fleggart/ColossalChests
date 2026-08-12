@@ -1,6 +1,6 @@
 package org.cyclops.colossalchests.inventory.container;
 
-import com.google.common.collect.Lists;
+import java.util.ArrayList;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -50,7 +50,7 @@ public class ContainerColossalChest extends ScrollingInventoryContainer<Slot> {
 
         this.tile = tile;
         tile.openInventory(inventory.player);
-        this.chestSlots = Lists.newArrayListWithCapacity(tile.getSizeInventory());
+        this.chestSlots = new ArrayList<>(tile.getSizeInventory());
         this.addChestSlots(tile.getSizeInventory() / CHEST_INVENTORY_COLUMNS, CHEST_INVENTORY_COLUMNS);
         this.addPlayerInventory(inventory, INVENTORY_OFFSET_X, INVENTORY_OFFSET_Y);
         updateFilter("");
