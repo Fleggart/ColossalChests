@@ -1,7 +1,5 @@
 package org.cyclops.colossalchests.item;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -30,8 +28,6 @@ import org.cyclops.cyclopscore.inventory.PlayerInventoryIterator;
  * An item to upgrade chests to the next tier.
  * @author rubensworks
  */
-@EqualsAndHashCode(callSuper = false)
-@Data
 public class ItemUpgradeTool extends ConfigurableItem {
 
     private static ItemUpgradeTool _instance = null;
@@ -210,4 +206,23 @@ public class ItemUpgradeTool extends ConfigurableItem {
         return null;
     }
 
+    // ===== 手动添加 equals, hashCode, toString（原 @Data 生成） =====
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ItemUpgradeTool that = (ItemUpgradeTool) o;
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ItemUpgradeTool{}";
+    }
 }
