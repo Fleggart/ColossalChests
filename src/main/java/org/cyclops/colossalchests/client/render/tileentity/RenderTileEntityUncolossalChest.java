@@ -42,13 +42,21 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
             GlStateManager.rotate(rotation, 0F, 1F, 0F);
         }
         
-        // 位置和缩放
-        GlStateManager.translate(0.5F, 0.83F, 0.5F);
+        // 绑定纹理
+        bindTexture(TEXTURE_CHEST);
+        
+        // ===== 修正贴图颠倒：标准箱子渲染方式 =====
+        // 移动到中心位置
+        GlStateManager.translate(0.5F, 0.5F, 0.5F);
+        // 翻转 Y 轴使纹理正确显示
+        GlStateManager.scale(1.0F, -1.0F, 1.0F);
+        
+        // 缩放为迷你箱子 (原始大小 1.0，缩小到 0.3375)
         float size = 0.3F * 1.125F;
         GlStateManager.scale(size, size, size);
         
-        // 绑定纹理
-        bindTexture(TEXTURE_CHEST);
+        // 调整到地面位置
+        GlStateManager.translate(0.0F, -0.33F, 0.0F);
         
         // 箱盖动画
         if (tile != null) {
@@ -58,8 +66,7 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
             model.chestLid.rotateAngleX = -(lidAngle * (float) Math.PI / 2.0F);
         }
         
-        // 渲染
-        GlStateManager.translate(0, -0.0625F * 8, 0);
+        // 渲染模型
         model.renderAll();
         
         GlStateManager.popMatrix();
