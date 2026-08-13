@@ -8,8 +8,7 @@ import org.cyclops.colossalchests.tileentity.TileUncolossalChest;
 
 /**
  * Renderer for the Uncolossal Chest.
- * 
- * @author rubensworks
+ * * @author rubensworks
  */
 public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<TileUncolossalChest> {
 
@@ -27,38 +26,36 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
                        float partialTicks, int destroyStage, float alpha) {
         
         GlStateManager.pushMatrix();
-        GlStateManager.translate((float)x, (float)y, (float)z);
         
-        // 旋转（朝向）
+        // 1. 将原点平移到方块的中心点 (0.5, 0.5, 0.5)
+        GlStateManager.translate((float)x + 0.5F, (float)y + 0.5F, (float)z + 0.5F);
+        
+        // 2. 旋转朝向
         if (tile != null) {
             float rotation = 0F;
             switch (tile.getRotation()) {
                 case NORTH: rotation = 180F; break;
                 case SOUTH: rotation = 0F; break;
-                case WEST: rotation = 90F; break;
-                case EAST: rotation = -90F; break;
-                default: rotation = 0F;
+                case WEST:  rotation = 90F; break;
+                case EAST:  rotation = -90F; break;
+                default:    rotation = 0F;
             }
             GlStateManager.rotate(rotation, 0F, 1F, 0F);
         }
         
-        // ===== 关键修复：启用面剔除 =====
-        GlStateManager.enableCull();        // 启用面剔除
-        GlStateManager.cullFace(GlStateManager.CullFace.BACK); // 剔除背面
+        // 3. 核心修复：Y 轴与 Z 轴同时乘以 -1.0F，将 ModelChest “翻正”
+        GlStateManager.scale(1.0F, -1.0F, -1.0F);
         
-        // 绑定纹理
-        bindTexture(TEXTURE_CHEST);
-        
-        // 移动到中心位置并翻转
-        GlStateManager.translate(0.5F, 0.5F, 0.5F);
-        GlStateManager.scale(1.0F, -1.0F, 1.0F);
-        
-        // 缩放为迷你箱子
+        // 4. 应用你的迷你箱子缩放比例
         float size = 0.3F * 1.125F;
         GlStateManager.scale(size, size, size);
         
-        // 调整到地面位置
-        GlStateManager.translate(0.0F, -0.33F, 0.0F);
+        // 5. 调整垂直位置，让迷你箱子落到地面（根据实际视觉微调 Y 轴平移）
+        // 因为前面经过了 -1.0F 翻转，这里的 Y 轴负方向代表向上，正方向代表向下
+        GlStateManager.translate(-0.5F, -0.5F, -0.5F); 
+        
+        // 绑定纹理
+        bindTexture(TEXTURE_CHEST);
         
         // 箱盖动画
         if (tile != null) {
@@ -70,9 +67,6 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
         
         // 渲染模型
         model.renderAll();
-        
-        // 恢复状态
-        GlStateManager.disableCull();       // 禁用面剔除
         
         GlStateManager.popMatrix();
     }
