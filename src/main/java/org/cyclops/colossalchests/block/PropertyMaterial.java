@@ -1,5 +1,6 @@
 package org.cyclops.colossalchests.block;
 
+import com.google.common.base.Optional;
 import net.minecraft.block.properties.IProperty;
 import org.cyclops.colossalchests.Reference;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
@@ -41,7 +42,7 @@ public class PropertyMaterial implements IProperty<PropertyMaterial.Type> {
                 return Optional.of(type);
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 
     @Override
