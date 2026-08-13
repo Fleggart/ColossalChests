@@ -40,7 +40,7 @@ public class Interface extends ConfigurableBlockContainer implements CubeDetecto
     @BlockProperty
     public static final PropertyBool ACTIVE = ColossalChest.ACTIVE;
     @BlockProperty
-    public static final PropertyMaterial MATERIAL = ColossalChest.MATERIAL;
+    public static final PropertyMaterial MATERIAL = PropertyMaterial.create("material");
 
     private static Interface _instance = null;
 

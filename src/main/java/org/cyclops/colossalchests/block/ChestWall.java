@@ -39,7 +39,7 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
     @BlockProperty
     public static final PropertyBool ACTIVE = ColossalChest.ACTIVE;
     @BlockProperty
-    public static final PropertyMaterial MATERIAL = ColossalChest.MATERIAL;
+    public static final PropertyMaterial MATERIAL = PropertyMaterial.create("material");
 
     private static ChestWall _instance = null;
 
