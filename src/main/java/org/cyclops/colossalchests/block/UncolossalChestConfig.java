@@ -1,6 +1,6 @@
 package org.cyclops.colossalchests.block;
 
-import net.minecraft.client.model.ModelChest;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.cyclops.colossalchests.ColossalChests;
@@ -26,10 +26,10 @@ public class UncolossalChestConfig extends BlockContainerConfig {
     public UncolossalChestConfig() {
         super(
                 ColossalChests._instance,
-        	true,
-            "uncolossal_chest",
-            null,
-            UncolossalChest.class
+                true,
+                "uncolossal_chest",
+                null,
+                UncolossalChest.class
         );
     }
 
@@ -37,8 +37,9 @@ public class UncolossalChestConfig extends BlockContainerConfig {
     @SideOnly(Side.CLIENT)
     public void onRegistered() {
         super.onRegistered();
-        ModelChest model = new ModelChest();
-        ColossalChests._instance.getProxy().registerRenderer(TileUncolossalChest.class, new RenderTileEntityUncolossalChest(model));
+        ClientRegistry.bindTileEntitySpecialRenderer(
+            TileUncolossalChest.class, 
+            new RenderTileEntityUncolossalChest()
+        );
     }
-    
 }
