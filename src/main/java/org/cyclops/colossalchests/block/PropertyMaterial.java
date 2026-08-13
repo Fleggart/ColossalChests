@@ -1,23 +1,59 @@
 package org.cyclops.colossalchests.block;
 
-import net.minecraft.block.properties.PropertyEnum;
+import net.minecraft.block.properties.IProperty;
 import org.cyclops.colossalchests.Reference;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
 
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class PropertyMaterial extends PropertyEnum<PropertyMaterial.Type> {
+public class PropertyMaterial implements IProperty<PropertyMaterial.Type> {
 
-    // ========== 单例 ==========
-    private static final PropertyMaterial INSTANCE = new PropertyMaterial("material", Type.class, java.util.Arrays.asList(Type.values()));
+    private final String name;
+    private final Set<Type> allowedValues;
 
-    private PropertyMaterial(String name, Class<Type> valueClass, java.util.Collection<Type> allowedValues) {
-        super(name, valueClass, allowedValues);
+    private PropertyMaterial(String name, Collection<Type> values) {
+        this.name = name;
+        this.allowedValues = Collections.unmodifiableSet(new HashSet<>(values));
     }
 
-    public static PropertyMaterial getInstance() {
-        return INSTANCE;
+    @Override
+    public String getName() {
+        return this.name;
     }
+
+    @Override
+    public Collection<Type> getAllowedValues() {
+        return this.allowedValues;
+    }
+
+    @Override
+    public Class<Type> getValueClass() {
+        return Type.class;
+    }
+
+    @Override
+    public Optional<Type> parseValue(String value) {
+        for (Type type : allowedValues) {
+            if (type.toString().equalsIgnoreCase(value)) {
+                return Optional.of(type);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public String getName(Type value) {
+        return value.toString().toLowerCase(Locale.ENGLISH);
+    }
+
+    // ============ 静态工厂方法 ============
+
+    public static PropertyMaterial create(String name) {
+        return new PropertyMaterial(name, Arrays.asList(Type.values()));
+    }
+
+    // ============ 内部枚举 ============
 
     public enum Type {
         WOOD(1),
