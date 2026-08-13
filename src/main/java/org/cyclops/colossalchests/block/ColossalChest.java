@@ -47,7 +47,7 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
     @BlockProperty
     public static final PropertyBool ACTIVE = PropertyBool.create("active");
     @BlockProperty
-    public static final PropertyMaterial MATERIAL = PropertyMaterial.create("material");
+    public static final PropertyMaterial MATERIAL = PropertyMaterial.INSTANCE;
 
     private static ColossalChest _instance = null;
 
