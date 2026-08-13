@@ -26,16 +26,12 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
- //   compileOnly 'org.projectlombok:lombok:1.18.30'
-  //  annotationProcessor 'org.projectlombok:lombok:1.18.30'
-    
     implementation "curse.maven:Cyclops-Core-232758:2483504"
-    //implementation "curse.maven:Common-Capabilities-247007:3053017"
 }
 
 version = "1.0.0"
 base {
-    archivesName = "yourmod"
+    archivesName = "ColossalChests"
 }
 
 minecraft {
