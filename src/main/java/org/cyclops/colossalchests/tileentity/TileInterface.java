@@ -1,7 +1,5 @@
 package org.cyclops.colossalchests.tileentity;
 
-import lombok.Getter;
-import lombok.experimental.Delegate;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.ItemStack;
@@ -17,20 +15,56 @@ import org.cyclops.cyclopscore.tileentity.CyclopsTileEntity;
 import javax.annotation.Nonnull;
 import java.lang.ref.WeakReference;
 
-/**
- * A machine that can infuse things with blood.
- * @author rubensworks
- *
- */
 public class TileInterface extends CyclopsTileEntity implements ISidedInventory {
 
-    @Delegate
     private final ITickingTile tickingTileComponent = new TickingTileComponent(this);
 
     @NBTPersist
-    @Getter
     private Vec3i corePosition = null;
     private WeakReference<TileColossalChest> coreReference = new WeakReference<TileColossalChest>(null);
+
+    // ===== 手动添加 getter =====
+    public Vec3i getCorePosition() {
+        return corePosition;
+    }
+
+    // ===== 手动添加 setter =====
+    public void setCorePosition(Vec3i corePosition) {
+        this.corePosition = corePosition;
+        coreReference = new WeakReference<TileColossalChest>(null);
+    }
+
+    // ===== 手动委托 ITickingTile 的 5 个方法 =====
+    @Override
+    public void update() {
+        tickingTileComponent.update();
+    }
+
+    @Override
+    public void markDirty() {
+        super.markDirty();
+        tickingTileComponent.markDirty();
+    }
+
+    @Override
+    public void validate() {
+        super.validate();
+        tickingTileComponent.validate();
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        tickingTileComponent.invalidate();
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        tickingTileComponent.onLoad();
+    }
+
+    // ===== 以下所有方法保持不变 =====
 
     @Override
     public boolean hasCapability(@Nonnull Capability<?> capability, EnumFacing facing) {
@@ -53,11 +87,6 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
         return super.getCapability(capability, facing);
     }
 
-    public void setCorePosition(Vec3i corePosition) {
-        this.corePosition = corePosition;
-        coreReference = new WeakReference<TileColossalChest>(null);
-    }
-
     protected TileColossalChest getCore() {
         if(corePosition == null) {
             return null;
@@ -71,7 +100,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public int[] getSlotsForFace(EnumFacing side) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return new int[0];
         }
@@ -80,7 +109,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public boolean canInsertItem(int index, ItemStack itemStackIn, EnumFacing direction) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return false;
         }
@@ -89,7 +118,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return false;
         }
@@ -116,7 +145,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return ItemStack.EMPTY;
         }
@@ -125,7 +154,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return ItemStack.EMPTY;
         }
@@ -134,7 +163,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return ItemStack.EMPTY;
         }
@@ -143,7 +172,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core != null) {
             core.setInventorySlotContents(index, stack);
         }
@@ -151,7 +180,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public int getInventoryStackLimit() {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return 0;
         }
@@ -169,7 +198,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public void openInventory(EntityPlayer player) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core != null) {
             core.openInventory(player);
         }
@@ -177,7 +206,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public void closeInventory(EntityPlayer player) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core != null) {
             core.closeInventory(player);
         }
@@ -185,7 +214,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return false;
         }
@@ -194,7 +223,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public int getField(int id) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return -1;
         }
@@ -203,7 +232,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public void setField(int id, int value) {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core != null) {
             core.setField(id, value);
         }
@@ -211,7 +240,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public int getFieldCount() {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return 0;
         }
@@ -220,7 +249,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public void clear() {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core != null) {
             core.clear();
         }
@@ -237,7 +266,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public boolean hasCustomName() {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return false;
         }
@@ -246,11 +275,10 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
 
     @Override
     public ITextComponent getDisplayName() {
-        ISidedInventory core =  getCore();
+        ISidedInventory core = getCore();
         if(core == null) {
             return null;
         }
         return core.getDisplayName();
     }
-
 }
