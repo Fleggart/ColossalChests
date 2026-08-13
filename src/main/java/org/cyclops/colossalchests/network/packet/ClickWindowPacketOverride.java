@@ -1,6 +1,6 @@
 package org.cyclops.colossalchests.network.packet;
 
-import com.google.common.collect.Lists;
+import java.util.ArrayList;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.ClickType;
@@ -70,7 +70,7 @@ public class ClickWindowPacketOverride extends PacketCodec {
 		player.markPlayerActive();
         if (player.openContainer.windowId == windowId && player.openContainer.getCanCraft(player)) {
 			if (player.isSpectator()) {
-				ArrayList arraylist = Lists.newArrayList();
+				ArrayList arraylist = new ArrayList();
 
 				for (int i = 0; i < player.openContainer.inventorySlots.size(); ++i) {
 					arraylist.add((player.openContainer.inventorySlots.get(i)).getStack());
@@ -91,7 +91,7 @@ public class ClickWindowPacketOverride extends PacketCodec {
 					field_147372_n.addKey(player.openContainer.windowId, Short.valueOf(actionNumber));
 					player.connection.sendPacket(new SPacketConfirmTransaction(windowId, actionNumber, false));
 					player.openContainer.setCanCraft(player, false);
-					ArrayList arraylist1 = Lists.newArrayList();
+					ArrayList arraylist1 = new ArrayList();
 
 					for (int j = 0; j < player.openContainer.inventorySlots.size(); ++j) {
 						arraylist1.add(((Slot)player.openContainer.inventorySlots.get(j)).getStack());
