@@ -5,9 +5,11 @@ import org.cyclops.colossalchests.Reference;
 import org.cyclops.cyclopscore.helper.L10NHelpers;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class PropertyMaterial implements IProperty<PropertyMaterial.Type> {
+
+    // ========== 单例 ==========
+    public static final PropertyMaterial INSTANCE = new PropertyMaterial("material", Arrays.asList(Type.values()));
 
     private final String name;
     private final Set<Type> allowedValues;
@@ -45,12 +47,6 @@ public class PropertyMaterial implements IProperty<PropertyMaterial.Type> {
     @Override
     public String getName(Type value) {
         return value.toString().toLowerCase(Locale.ENGLISH);
-    }
-
-    // ============ 静态工厂方法 ============
-
-    public static PropertyMaterial create(String name) {
-        return new PropertyMaterial(name, Arrays.asList(Type.values()));
     }
 
     // ============ 内部枚举 ============
