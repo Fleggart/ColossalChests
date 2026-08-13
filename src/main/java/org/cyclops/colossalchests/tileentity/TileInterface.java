@@ -34,8 +34,7 @@ public class TileInterface extends CyclopsTileEntity implements ISidedInventory 
         coreReference = new WeakReference<TileColossalChest>(null);
     }
 
-    // ===== 只委托 update() 方法（ITickingTile 唯一的方法） =====
-    @Override
+    // ===== 委托 update() 方法（不加 @Override，因为 TileInterface 没有这个方法） =====
     public void update() {
         tickingTileComponent.update();
     }
