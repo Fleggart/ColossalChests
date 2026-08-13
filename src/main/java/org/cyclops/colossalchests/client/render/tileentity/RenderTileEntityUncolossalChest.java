@@ -3,9 +3,10 @@ package org.cyclops.colossalchests.client.render.tileentity;
 import net.minecraft.client.model.ModelChest;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
-import org.cyclops.colossalchests.Reference;
 import org.cyclops.colossalchests.tileentity.TileUncolossalChest;
 import org.cyclops.cyclopscore.client.render.tileentity.RenderTileEntityModel;
+
+import java.util.Calendar;
 
 /**
  * Renderer for the {@link org.cyclops.colossalchests.block.ColossalChest}.
@@ -14,11 +15,10 @@ import org.cyclops.cyclopscore.client.render.tileentity.RenderTileEntityModel;
  */
 public class RenderTileEntityUncolossalChest extends RenderTileEntityModel<TileUncolossalChest, ModelChest> {
 
-    // 直接定义需要的纹理，不依赖PropertyMaterial
     private static final ResourceLocation TEXTURE_UNCOLOSSAL_CHEST = 
         new ResourceLocation("textures/entity/chest/normal.png");
 
-	/**
+    /**
      * Make a new instance.
      * @param model The model to render.
      */
@@ -40,7 +40,6 @@ public class RenderTileEntityUncolossalChest extends RenderTileEntityModel<TileU
 
     @Override
     protected void renderModel(TileUncolossalChest chestTile, ModelChest model, float partialTick, int destroyStage) {
-        // 直接使用普通箱子的纹理，不需要PropertyMaterial
         bindTexture(TEXTURE_UNCOLOSSAL_CHEST);
         GlStateManager.pushMatrix();
         float lidangle = chestTile.prevLidAngle + (chestTile.lidAngle - chestTile.prevLidAngle) * partialTick;
