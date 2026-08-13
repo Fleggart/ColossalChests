@@ -42,16 +42,18 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
             GlStateManager.rotate(rotation, 0F, 1F, 0F);
         }
         
+        // ===== 关键修复：启用面剔除 =====
+        GlStateManager.enableCull();        // 启用面剔除
+        GlStateManager.cullFace(GlStateManager.CullFace.BACK); // 剔除背面
+        
         // 绑定纹理
         bindTexture(TEXTURE_CHEST);
         
-        // ===== 修正贴图颠倒：标准箱子渲染方式 =====
-        // 移动到中心位置
+        // 移动到中心位置并翻转
         GlStateManager.translate(0.5F, 0.5F, 0.5F);
-        // 翻转 Y 轴使纹理正确显示
         GlStateManager.scale(1.0F, -1.0F, 1.0F);
         
-        // 缩放为迷你箱子 (原始大小 1.0，缩小到 0.3375)
+        // 缩放为迷你箱子
         float size = 0.3F * 1.125F;
         GlStateManager.scale(size, size, size);
         
@@ -68,6 +70,9 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
         
         // 渲染模型
         model.renderAll();
+        
+        // 恢复状态
+        GlStateManager.disableCull();       // 禁用面剔除
         
         GlStateManager.popMatrix();
     }
