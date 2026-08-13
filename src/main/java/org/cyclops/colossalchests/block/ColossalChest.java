@@ -261,9 +261,16 @@ public class ColossalChest extends ConfigurableBlockContainerGui implements Cube
                 new BlockPropertyManagerComponent.UnlistedPropertyComparator())).createDelegatedBlockState();
     }
 
+
+
+
     @Override
-    public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
-        return super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta * 2, placer, hand);
+    public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, 
+        float hitX, float hitY, float hitZ, 
+        int meta, EntityLivingBase placer, EnumHand hand) {
+        PropertyMaterial.Type material = PropertyMaterial.Type.values()[meta % PropertyMaterial.Type.values().length];
+        IBlockState state = super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer, hand);
+        return state.withProperty(MATERIAL, material);
     }
 
     @Override
