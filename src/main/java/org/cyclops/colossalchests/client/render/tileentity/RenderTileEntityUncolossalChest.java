@@ -6,10 +6,9 @@ import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.util.ResourceLocation;
 import org.cyclops.colossalchests.tileentity.TileUncolossalChest;
 
-import java.util.Calendar;
-
 /**
  * Renderer for the Uncolossal Chest.
+ * 
  * @author rubensworks
  */
 public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<TileUncolossalChest> {
@@ -17,7 +16,11 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
     private static final ResourceLocation TEXTURE_CHEST = 
         new ResourceLocation("textures/entity/chest/normal.png");
     
-    private final ModelChest model = new ModelChest();
+    private final ModelChest model;
+
+    public RenderTileEntityUncolossalChest() {
+        this.model = new ModelChest();
+    }
 
     @Override
     public void render(TileUncolossalChest tile, double x, double y, double z, 
