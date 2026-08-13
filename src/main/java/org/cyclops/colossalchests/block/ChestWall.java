@@ -146,8 +146,11 @@ public class ChestWall extends ConfigurableBlock implements CubeDetector.IDetect
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, 
                                             float hitX, float hitY, float hitZ, 
                                             int meta, EntityLivingBase placer, EnumHand hand) {
+        // 从 meta 恢复材质
+        PropertyMaterial.Type material = PropertyMaterial.Type.values()[meta % PropertyMaterial.Type.values().length];
         IBlockState state = super.getStateForPlacement(worldIn, pos, facing, hitX, hitY, hitZ, meta, placer, hand);
-        return state.withProperty(ACTIVE, false);
+        return state.withProperty(ACTIVE, false)
+                    .withProperty(MATERIAL, material);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
