@@ -29,8 +29,8 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
         if (tile != null) {
             float rotation = 0F;
             switch (tile.getRotation()) {
-                case NORTH: rotation = 180F; break;
-                case SOUTH: rotation = 0F; break;
+                case NORTH: rotation = 0F; break;
+                case SOUTH: rotation = 180F; break;
                 case WEST:  rotation = 90F; break;
                 case EAST:  rotation = -90F; break;
                 default:    rotation = 0F;
