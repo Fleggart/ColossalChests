@@ -23,7 +23,7 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
         
         GlStateManager.pushMatrix();
         
-        GlStateManager.translate((float)x + 0.5F, (float)y + 0.0F, (float)z + 0.5F);   
+        GlStateManager.translate((float)x + 0.5F, (float)y + 0.1F, (float)z + 0.5F);   
         
         // 2. 旋转朝向
         if (tile != null) {
