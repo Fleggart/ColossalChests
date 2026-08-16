@@ -37,7 +37,7 @@ base {
 minecraft {
     mcVersion = '1.12.2'
     mcpMappingChannel = 'stable'
-    mcpMappingVersion = '42'
+    mcpMappingVersion = '39'
     
     
 }
