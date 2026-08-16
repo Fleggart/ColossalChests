@@ -40,7 +40,7 @@ public class RenderTileEntityUncolossalChest extends TileEntitySpecialRenderer<T
         
         GlStateManager.scale(1.0F, -1.0F, -1.0F);
         
-        float size = 0.2F;
+        float size = 0.4F;
         GlStateManager.scale(size, size, size);
         
         GlStateManager.translate(-0.5F, -0.5F, -0.5F); 
